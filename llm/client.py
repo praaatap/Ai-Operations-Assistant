@@ -38,7 +38,7 @@ class LLMClient:
         Args:
             provider: 'gemini' or 'groq'. If None, auto-detects based on available keys.
         """
-        self.provider = provider or os.getenv("LLM_PROVIDER", "groq")
+        self.provider = provider or os.getenv("LLM_PROVIDER", "gemini")
         self._token_usage = {
             "prompt_tokens": 0,
             "completion_tokens": 0,
