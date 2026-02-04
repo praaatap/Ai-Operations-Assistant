@@ -49,12 +49,12 @@ st.markdown("""
         --warning: #f59e0b;
         --danger: #ef4444;
         --glass-bg: rgba(255, 255, 255, 0.03);
-        --glass-border: rgba(255, 255, 255, 0.12);
+        --glass-border: rgba(255, 255, 255, 0.08);
     }
 
     /* BASE THEME */
     .stApp {
-        background: #000000;
+        background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%);
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     }
     
