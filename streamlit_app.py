@@ -340,10 +340,13 @@ with tab1:
                 steps = plan.get("steps", []) if isinstance(plan, dict) else []
                 st.metric("Steps", len(steps))
             with col4:
-                execution = result.get("execution", {})
-                if execution:
-                    failed = execution.get("steps_failed", 0)
-                    st.metric("Failed", failed)
+                # Mock cost for now, as API response doesn't pass it through deeply yet
+                # ideally this would come from the API response
+                token_cost = result.get("cost", 0.0) 
+                if token_cost:
+                    st.metric("Est. Cost", f"${token_cost:.4f}")
+                else:
+                    st.metric("Wait", "None") # Placeholder until API is updated to return cost
             
             st.divider()
             

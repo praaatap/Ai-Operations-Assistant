@@ -37,7 +37,7 @@ You don't generate plans - you only execute steps given to you."""
 
     async def process(self, plan: ExecutionPlan) -> ExecutionResult:
         """
-        Execute all steps in the plan.
+        Execute steps in the plan, processing independent steps in parallel.
         
         Args:
             plan: ExecutionPlan with steps to execute
@@ -45,15 +45,62 @@ You don't generate plans - you only execute steps given to you."""
         Returns:
             ExecutionResult with all step outcomes
         """
+        import asyncio
+        
         results: List[StepExecution] = []
         step_results: Dict[int, Any] = {}  # Store results by step number
         
-        for step in plan.steps:
-            execution = await self._execute_step(step, step_results)
-            results.append(execution)
+        # Sort steps by step number to ensure correct processing order
+        sorted_steps = sorted(plan.steps, key=lambda x: x.step_number)
+        
+        # Track completed steps
+        completed_step_ids = set()
+        pending_steps = list(sorted_steps)
+        
+        while pending_steps:
+            # excessive safeguard: break if no progress to avoid infinite loops
+            progress_made = False
             
-            if execution.status == "success":
-                step_results[step.step_number] = execution.result
+            # Find steps that are ready to run (dependencies satisfied)
+            batch = []
+            remaining = []
+            
+            for step in pending_steps:
+                dependencies = set(step.depends_on)
+                if dependencies.issubset(completed_step_ids):
+                    batch.append(step)
+                else:
+                    remaining.append(step)
+            
+            if not batch:
+                # This handles cases where dependencies might be circular or missing
+                # We'll just run the next available step to unblock
+                if pending_steps:
+                    batch.append(pending_steps[0])
+                    remaining = pending_steps[1:]
+            
+            # Execute batch in parallel
+            batch_coroutines = [self._execute_step(step, step_results) for step in batch]
+            if batch_coroutines:
+                batch_results = await asyncio.gather(*batch_coroutines)
+                
+                for execution in batch_results:
+                    results.append(execution)
+                    completed_step_ids.add(execution.step_number)
+                    
+                    if execution.status == "success":
+                        step_results[execution.step_number] = execution.result
+                
+                progress_made = True
+            
+            pending_steps = remaining
+            
+            if not progress_made and pending_steps:
+                # Should not happen with proper dependency graph, but just in case
+                break
+        
+        # Re-sort results by step number for consistent output
+        results.sort(key=lambda x: x.step_number)
         
         # Calculate summary
         successful = sum(1 for r in results if r.status == "success")

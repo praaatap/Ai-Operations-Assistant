@@ -30,6 +30,12 @@ class LLMClient:
             provider: 'gemini' or 'openai'. If None, auto-detects based on available keys.
         """
         self.provider = provider or os.getenv("LLM_PROVIDER", "gemini")
+        self._token_usage = {
+            "prompt_tokens": 0,
+            "completion_tokens": 0,
+            "total_tokens": 0,
+            "estimated_cost_usd": 0.0
+        }
         self._setup_client()
     
     def _setup_client(self):
@@ -78,6 +84,12 @@ class LLMClient:
             full_prompt = f"{system_prompt}\n\n{prompt}"
         
         response = self.model.generate_content(full_prompt)
+        
+        # Track usage
+        prompt_tokens = self._estimate_tokens(full_prompt)
+        completion_tokens = self._estimate_tokens(response.text)
+        self._track_usage(prompt_tokens, completion_tokens)
+        
         return response.text
     
     def _generate_openai(self, prompt: str, system_prompt: Optional[str] = None) -> str:
@@ -92,6 +104,15 @@ class LLMClient:
             messages=messages,
             temperature=0.7
         )
+        
+        # Track usage
+        if hasattr(response, 'usage') and response.usage:
+            self._track_usage(response.usage.prompt_tokens, response.usage.completion_tokens)
+        else:
+            prompt_tokens = self._estimate_tokens(str(messages))
+            completion_tokens = self._estimate_tokens(response.choices[0].message.content)
+            self._track_usage(prompt_tokens, completion_tokens)
+            
         return response.choices[0].message.content
     
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
@@ -124,3 +145,28 @@ class LLMClient:
         response = response.strip()
         
         return json.loads(response)
+
+    def get_token_usage(self) -> dict:
+        """Get accumulated token usage statistics"""
+        return self._token_usage
+
+    def _track_usage(self, prompt_tokens: int, completion_tokens: int):
+        """Track token usage and estimated cost"""
+        self._token_usage["prompt_tokens"] += prompt_tokens
+        self._token_usage["completion_tokens"] += completion_tokens
+        self._token_usage["total_tokens"] += prompt_tokens + completion_tokens
+        
+        # Estimate cost (approximate rates)
+        cost = 0.0
+        if self.provider == "openai":
+            # GPT-3.5 Turbo rates
+            cost = (prompt_tokens * 0.0005 / 1000) + (completion_tokens * 0.0015 / 1000)
+        elif self.provider == "gemini":
+            # Gemini Flash rates (free tier or low cost)
+            cost = (prompt_tokens * 0.000125 / 1000) + (completion_tokens * 0.000375 / 1000)
+            
+        self._token_usage["estimated_cost_usd"] += cost
+
+    def _estimate_tokens(self, text: str) -> int:
+        """Simple rule-of-thumb token estimation (4 chars ~= 1 token)"""
+        return len(text) // 4

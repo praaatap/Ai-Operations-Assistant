@@ -226,6 +226,9 @@ async def process_task(request: TaskRequest):
             duration = time.time() - start_time
             logger.info(f"Task processing completed in {duration:.2f}s")
             
+            # Get token usage
+            usage = llm_client.get_token_usage() if llm_client else {}
+            
             return TaskResponse(
                 success=result.get("success", False),
                 plan=result.get("plan"),
@@ -236,7 +239,8 @@ async def process_task(request: TaskRequest):
                     data=final_response.get("data", {}),
                     sources=final_response.get("sources", []),
                     errors=final_response.get("errors", [])
-                )
+                ),
+                cost=usage.get("estimated_cost_usd", 0.0)
             )
         else:
             # Fallback to direct agent calls

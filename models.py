@@ -164,6 +164,7 @@ class TaskResponse(BaseModel):
     plan: Optional[ExecutionPlan] = None
     execution: Optional[ExecutionResult] = None
     response: Optional[FinalResponse] = None
+    cost: float = Field(default=0.0, description="Estimated cost in USD")
     error: Optional[str] = None
     
     model_config = {
