@@ -28,6 +28,7 @@ except ImportError:
     GROQ_AVAILABLE = False
 
 
+# Trigger reload
 class LLMClient:
     """Unified LLM client supporting Gemini and Groq"""
     
@@ -59,11 +60,11 @@ class LLMClient:
             if GEMINI_NEW_SDK:
                 # New SDK: google-genai
                 self.client = genai.Client(api_key=api_key)
-                self.model_name = "gemini-2.0-flash"
+                self.model_name = "gemini-2.5-flash"
             else:
                 # Legacy SDK: google-generativeai
                 genai.configure(api_key=api_key)
-                self.model = genai.GenerativeModel('gemini-1.5-flash')
+                self.model = genai.GenerativeModel('gemini-2.5-flash')
             
         elif self.provider == "groq":
             if not GROQ_AVAILABLE:
