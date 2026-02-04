@@ -1,8 +1,26 @@
 version: "3.8"
 
 services:
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: ai-ops-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # AI Operations Assistant API
   ai-ops-assistant:
     build: .
+    container_name: ai-ops-api
     ports:
       - "8000:8000"
     volumes:
@@ -11,4 +29,18 @@ services:
       - .env
     environment:
       - PYTHONUNBUFFERED=1
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     restart: unless-stopped
+
+volumes:
+  redis_data:
+    driver: local
