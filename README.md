@@ -111,30 +111,36 @@ Open `.env` in a text editor and add your API keys:
 
 ## Usage
 
-### Running the Application
+### 🚀 Quick Start (Recommended)
 
-To launch both the backend API and the frontend dashboard (with auto-start enabled):
+To launch the full system (Backend + Frontend) in a single command:
 
 ```bash
 # Ensure your venv is activated
 streamlit run streamlit_app.py
 ```
 
-The application opens in your browser at `http://localhost:8501`.
+The application will automatically start the backend server in the background and open the web interface in your browser at `http://localhost:8501`.
 
-### Troubleshooting
+### 🛠️ Manual Development Mode
 
-*   **API Connection Error**: If you see connection errors, ensure `uvicorn` is installed and the backend started. The Streamlit app tries to auto-start it, but you can also run it manually:
-    ```bash
-    uvicorn main:app --reload --host 127.0.0.1 --port 8000
-    ```
-*   **Module Not Found**: Ensure you have activated your virtual environment (`venv`) before running commands.
+If you prefer to run services separately for debugging:
 
-### 6. Docker Support
+**Terminal 1 (Backend API):**
+```bash
+uvicorn main:app --reload --host 127.0.0.1 --port 8000
+```
 
-The application is containerized and available on the GitHub Container Registry.
+**Terminal 2 (Frontend Dashboard):**
+```bash
+streamlit run streamlit_app.py
+```
 
-**Pull and Run:**
+## Docker Support
+
+The application is fully containerized and available on the GitHub Container Registry (GHCR).
+
+### Pull & Run
 ```bash
 # Pull the latest image
 docker pull ghcr.io/praaatap/ai-operations-assistant:latest
@@ -143,7 +149,7 @@ docker pull ghcr.io/praaatap/ai-operations-assistant:latest
 docker run -d -p 8501:8501 --env-file .env ghcr.io/praaatap/ai-operations-assistant:latest
 ```
 
-*Note: You need to pass your `.env` file containing the API keys to the container.*
+*Note: You must provide a `.env` file with your API keys.*
 
 ## API Endpoints
 
