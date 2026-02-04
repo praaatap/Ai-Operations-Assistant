@@ -125,6 +125,15 @@ The application opens in your browser at `http://localhost:8501`.
     ```
 *   **Module Not Found**: Ensure you have activated your virtual environment (`venv`) before running commands.
 
+## API Endpoints
+
+The system exposes a RESTful API for direct integration. You can explore the interactive API documentation (Swagger UI) at `http://localhost:8000/docs` when the server is running.
+
+*   `POST /process`: Submit a natural language task.
+*   `GET /health`: Check system status and agent availability.
+*   `GET /docs`: Interactive API documentation (Swagger UI).
+*   `GET /redoc`: Alternative API documentation (ReDoc).
+
 ## Technology Stack
 
 *   **Backend**: FastAPI, Uvicorn
