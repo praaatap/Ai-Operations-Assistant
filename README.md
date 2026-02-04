@@ -61,6 +61,7 @@ A multi-agent AI system powered by **LangGraph** that accepts natural language t
 
 ## ✨ Features
 
+- **Premium UI Dashboard**: Glassmorphism design with real-time analytics and visualizations
 - **Multi-Agent Architecture**: Planner, Executor, and Verifier agents working together
 - **LangGraph Orchestration**: State machine-based workflow with automatic retry logic
 - **Parallel Execution**: Independent steps run concurrently for faster performance

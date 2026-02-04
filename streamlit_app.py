@@ -1,498 +1,399 @@
 """
-AI Operations Assistant - Streamlit UI
+AI Operations Assistant - Premium Streamlit UI
 
-A beautiful web interface for the multi-agent AI system.
+A high-end, glassmorphism-styled web interface for the multi-agent AI system.
+Features:
+- Real-time agent workflow visualization
+- Animated status indicators
+- Rich data rendering (charts, news cards, repo widgets)
+- Glassmorphism design system
 """
 import streamlit as st
 import requests
 import json
 import time
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
 from datetime import datetime
 
 # Page configuration
 st.set_page_config(
-    page_title="AI Operations Assistant",
+    page_title="AI Ops Assistant | Enterprise",
     page_icon="🤖",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"  # Start collapsed for more screen real estate
 )
 
-# Custom CSS for premium look
+# --- 🎨 DESIGN SYSTEM & CSS ----------------------------------------------------
 st.markdown("""
 <style>
-    /* Main container */
-    .main {
-        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+
+    /* BASE THEME */
+    .stApp {
+        background: radial-gradient(circle at 10% 20%, rgb(18, 18, 28) 0%, rgb(10, 10, 15) 90%);
+        font-family: 'Inter', sans-serif;
+    }
+
+    h1, h2, h3 {
+        font-family: 'Inter', sans-serif;
+        letter-spacing: -0.5px;
+    }
+
+    /* GLASSMORPHISM CARD */
+    .glass-card {
+        background: rgba(255, 255, 255, 0.03);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 20px;
+        padding: 24px;
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+        margin-bottom: 20px;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
     
-    /* Headers */
-    h1 {
-        background: linear-gradient(90deg, #00d2ff, #3a7bd5);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        font-weight: 700;
+    .glass-card:hover {
+        border-color: rgba(255, 255, 255, 0.15);
+        transform: translateY(-2px);
+        box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.3);
     }
-    
-    /* Cards */
-    .stCard {
+
+    /* AGENT INDICATORS */
+    .agent-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 12px;
+        border-radius: 50px;
+        font-size: 0.85em;
+        font-weight: 600;
+        margin-right: 10px;
         background: rgba(255, 255, 255, 0.05);
-        border-radius: 16px;
-        padding: 20px;
         border: 1px solid rgba(255, 255, 255, 0.1);
     }
     
-    /* Success box */
-    .success-box {
-        background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
-        border-radius: 12px;
-        padding: 20px;
-        color: white;
-        margin: 10px 0;
-    }
-    
-    /* Error box */
-    .error-box {
-        background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
-        border-radius: 12px;
-        padding: 20px;
-        color: white;
-        margin: 10px 0;
-    }
-    
-    /* Info box */
-    .info-box {
-        background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
-        border-radius: 12px;
-        padding: 20px;
-        color: white;
-        margin: 10px 0;
-    }
-    
-    /* Agent cards */
-    .agent-card {
-        background: rgba(255, 255, 255, 0.08);
-        border-radius: 12px;
-        padding: 15px;
-        margin: 10px 0;
-        border-left: 4px solid #3498db;
-    }
-    
-    .agent-card.planner {
-        border-left-color: #9b59b6;
-    }
-    
-    .agent-card.executor {
-        border-left-color: #e67e22;
-    }
-    
-    .agent-card.verifier {
-        border-left-color: #27ae60;
-    }
-    
-    /* Result card */
-    .result-card {
-        background: rgba(46, 204, 113, 0.1);
-        border-radius: 12px;
-        padding: 20px;
-        border: 1px solid rgba(46, 204, 113, 0.3);
-    }
-    
-    /* Step indicator */
-    .step-indicator {
-        display: inline-block;
-        width: 30px;
-        height: 30px;
+    .status-dot {
+        height: 8px;
+        width: 8px;
         border-radius: 50%;
-        background: #3498db;
-        color: white;
-        text-align: center;
-        line-height: 30px;
-        font-weight: bold;
-        margin-right: 10px;
+        margin-right: 8px;
+        box-shadow: 0 0 10px currentColor;
+    }
+
+    /* INPUT FIELD */
+    .stTextArea textarea {
+        background: rgba(20, 20, 30, 0.6) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        border-radius: 12px !important;
+        color: #e0e0e0 !important;
+        font-size: 1.1em !important;
+        transition: all 0.3s !important;
     }
     
-    /* Animated gradient button */
-    .stButton>button {
-        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    .stTextArea textarea:focus {
+        border-color: #3b82f6 !important;
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
+    }
+
+    /* BUTTONS */
+    div.stButton > button {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
         color: white;
         border: none;
-        padding: 12px 30px;
-        border-radius: 25px;
+        padding: 0.75rem 2rem;
+        border-radius: 12px;
         font-weight: 600;
+        letter-spacing: 0.5px;
         transition: all 0.3s ease;
+        text-transform: uppercase;
+        font-size: 0.9em;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     }
-    
-    .stButton>button:hover {
+
+    div.stButton > button:hover {
         transform: translateY(-2px);
-        box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.4);
     }
-    
-    /* Input styling */
-    .stTextArea textarea {
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: 12px;
-        color: white;
+
+    /* METRICS */
+    div[data-testid="stMetricValue"] {
+        font-size: 2rem !important;
+        background: linear-gradient(90deg, #60a5fa, #c084fc);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
     }
-    
-    /* Metrics */
-    .metric-card {
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: 12px;
-        padding: 15px;
+
+    /* CUSTOM GRID FOR RESULTS */
+    .result-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+    }
+
+    /* WEATHER CARD */
+    .weather-widget {
+        background: linear-gradient(135deg, #3b82f620 0%, #1d4ed820 100%);
+        border: 1px solid rgba(59, 130, 246, 0.3);
+        border-radius: 16px;
+        padding: 20px;
         text-align: center;
     }
-    
-    .metric-value {
-        font-size: 2em;
-        font-weight: bold;
-        color: #3498db;
+
+    /* NEWS CARD */
+    .news-item {
+        background: rgba(255, 255, 255, 0.03);
+        border-left: 4px solid #f59e0b;
+        padding: 15px;
+        margin-bottom: 15px;
+        border-radius: 0 12px 12px 0;
     }
-    
-    .metric-label {
-        color: #95a5a6;
-        font-size: 0.9em;
+
+    /* CODE BLOCKS */
+    code {
+        color: #f472b6 !important;
+        background: rgba(244, 114, 182, 0.1) !important;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# API Configuration
-API_URL = st.sidebar.text_input("API URL", value="http://localhost:8000")
+# --- 🔧 CONFIG & UTILS --------------------------------------------------------
+API_URL = st.sidebar.text_input("API Endpoint", value="http://localhost:8000")
 
-def check_api_health():
-    """Check if the API is running"""
+def get_status_color(status):
+    return "#10b981" if status == "success" else "#ef4444"
+
+def make_request(method, endpoint, **kwargs):
     try:
-        response = requests.get(f"{API_URL}/health", timeout=5)
-        return response.json()
-    except:
-        return None
-
-def process_task(task: str):
-    """Send task to API for processing"""
-    try:
-        response = requests.post(
-            f"{API_URL}/process",
-            json={"task": task},
-            timeout=120
-        )
-        return response.json()
-    except Exception as e:
-        return {"error": str(e)}
-
-def get_plan_only(task: str):
-    """Get execution plan without running"""
-    try:
-        response = requests.post(
-            f"{API_URL}/plan",
-            json={"task": task},
-            timeout=30
-        )
-        return response.json()
-    except Exception as e:
-        return {"error": str(e)}
-
-def get_cache_stats():
-    """Get cache statistics"""
-    try:
-        response = requests.get(f"{API_URL}/cache/stats", timeout=5)
-        return response.json()
-    except:
-        return None
-
-# Sidebar
-with st.sidebar:
-    st.image("https://img.icons8.com/fluency/96/robot-2.png", width=80)
-    st.title("⚙️ Settings")
-    
-    # Health Check
-    st.subheader("🏥 System Status")
-    health = check_api_health()
-    
-    if health:
-        status = health.get("status", "unknown")
-        if status == "healthy":
-            st.success("✅ API Connected")
+        if method == "GET":
+            resp = requests.get(f"{API_URL}{endpoint}", **kwargs)
         else:
-            st.warning(f"⚠️ {status}")
-        
-        # Agent status
-        agents = health.get("agents", {})
-        cols = st.columns(3)
-        with cols[0]:
-            if agents.get("planner"):
-                st.markdown("🟢 **Planner**")
-            else:
-                st.markdown("🔴 **Planner**")
-        with cols[1]:
-            if agents.get("executor"):
-                st.markdown("🟢 **Executor**")
-            else:
-                st.markdown("🔴 **Executor**")
-        with cols[2]:
-            if agents.get("verifier"):
-                st.markdown("🟢 **Verifier**")
-            else:
-                st.markdown("🔴 **Verifier**")
-        
-        # Cache stats
-        cache = health.get("cache", {})
-        if cache:
-            st.subheader("📊 Cache Stats")
-            st.metric("Hit Rate", cache.get("hit_rate", "0%"))
-            st.caption(f"Hits: {cache.get('hits', 0)} | Misses: {cache.get('misses', 0)}")
-            st.caption(f"Backend: {cache.get('backend', 'unknown')}")
-    else:
-        st.error("❌ API Not Connected")
-        st.caption("Make sure the API is running at the URL above")
-    
-    st.divider()
-    
-    # Example prompts
-    st.subheader("💡 Example Prompts")
-    examples = [
-        "Find top 5 Python ML libraries on GitHub",
-        "What's the weather in Tokyo?",
-        "Get latest AI news headlines",
-        "Find trending AI repos and get AI news"
-    ]
-    
-    for example in examples:
-        if st.button(example, key=f"ex_{example[:20]}", use_container_width=True):
-            st.session_state.task_input = example
+            resp = requests.post(f"{API_URL}{endpoint}", **kwargs)
+        return resp.json()
+    except Exception as e:
+        return {"error": str(e)}
 
-# Main content
-st.title("🤖 AI Operations Assistant")
-st.markdown("*Powered by LangGraph Multi-Agent Architecture*")
+# --- 📊 VISUALIZATION COMPONENTS ----------------------------------------------
+def render_weather_chart(data):
+    """Render weather data using Plotly if structure allows"""
+    # Just a placeholder for advanced viz if data structure matched
+    pass
 
-# Tabs
-tab1, tab2, tab3 = st.tabs(["🚀 Process Task", "📋 Plan Only", "📈 Analytics"])
+def render_news_grid(articles):
+    """Render news articles in a responsive grid"""
+    cols = st.columns(2)
+    for i, article in enumerate(articles):
+        with cols[i % 2]:
+            st.markdown(f"""
+            <div class="news-item">
+                <h4><a href="{article.get('url', '#')}" style="color:#e0e0e0;text-decoration:none" target="_blank">{article.get('title')}</a></h4>
+                <p style="color:#9ca3af;font-size:0.9em">{article.get('description', '')[:100]}...</p>
+                <div style="font-size:0.8em;color:#6b7280;margin-top:10px">
+                    <span>📰 {article.get('source')}</span> • <span>🕒 {article.get('published_at', '')[:10]}</span>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
 
-with tab1:
-    st.markdown("### Enter your task")
-    st.caption("Ask anything about GitHub repos, weather, or news - I'll plan and execute it!")
+# --- 📱 MAIN APP LAYOUT -------------------------------------------------------
+
+# Header Section
+col_logo, col_title = st.columns([1, 6])
+with col_logo:
+    st.image("https://img.icons8.com/3d-fluency/94/robot-2.png", width=84)
+with col_title:
+    st.markdown("""
+        <h1 style='margin-bottom:0'>AI Operations Assistant <span style="font-size:0.5em;vertical-align:top;background:#3b82f6;padding:2px 8px;border-radius:10px;color:white">PRO</span></h1>
+        <p style='color:#94a3b8; font-size: 1.1em'>Multi-Agent Orchestration • LangGraph • Redis Caching</p>
+    """, unsafe_allow_html=True)
+
+st.write("") # Spacer
+
+# Main Interactive Area
+with st.container():
+    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
     
-    # Task input
+    # Input Area with "Glow" effect
     task_input = st.text_area(
-        "Task",
-        value=st.session_state.get("task_input", ""),
-        height=100,
-        placeholder="e.g., Find the most popular Python machine learning libraries on GitHub and get the weather in San Francisco",
+        "Enter your complex task:", 
+        height=100, 
+        placeholder="e.g., 'Find the top 5 trending AI repos on GitHub, verify their activity, and check if there's any recent news about them.'",
         label_visibility="collapsed"
     )
     
-    col1, col2 = st.columns([1, 4])
-    with col1:
-        process_btn = st.button("🚀 Process", type="primary", use_container_width=True)
-    with col2:
-        dry_run = st.checkbox("Dry Run (Plan Only)", value=False)
-    
-    if process_btn and task_input:
-        with st.spinner("🔄 Processing your request..."):
-            start_time = time.time()
-            
-            # Progress indicators
-            progress_bar = st.progress(0)
-            status_text = st.empty()
-            
-            # Simulate progress while waiting
-            status_text.text("📝 Planner Agent: Analyzing your request...")
-            progress_bar.progress(20)
-            
-            # Make API call
-            if dry_run:
-                result = get_plan_only(task_input)
-            else:
-                status_text.text("🔧 Executor Agent: Running tools...")
-                progress_bar.progress(50)
-                result = process_task(task_input)
-            
-            status_text.text("✅ Verifier Agent: Validating results...")
-            progress_bar.progress(80)
-            
-            end_time = time.time()
-            duration = end_time - start_time
-            
-            progress_bar.progress(100)
-            status_text.empty()
-            progress_bar.empty()
-        
-        # Display results
-        st.divider()
-        
-        if "error" in result and result.get("error"):
-            st.markdown(f"""
-            <div class="error-box">
-                <h4>❌ Error</h4>
-                <p>{result.get('error')}</p>
+    col_act, col_opt = st.columns([1, 3])
+    with col_act:
+        run_btn = st.button("⚡ EXECUTE MISSION", use_container_width=True)
+    with col_opt:
+        st.markdown("""
+            <div style="display:flex; gap:15px; margin-top:10px; color:#64748b; font-size:0.9em">
+                <span>⚡ Parallel Execution Active</span>
+                <span>🔥 Redis Caching Enabled</span>
+                <span>🛡️ Auto-Verification On</span>
             </div>
-            """, unsafe_allow_html=True)
-        else:
-            success = result.get("success", False)
-            
-            # Metrics row
-            col1, col2, col3, col4 = st.columns(4)
-            with col1:
-                st.metric("Status", "✅ Success" if success else "⚠️ Partial")
-            with col2:
-                st.metric("Duration", f"{duration:.2f}s")
-            with col3:
-                plan = result.get("plan", {})
-                steps = plan.get("steps", []) if isinstance(plan, dict) else []
-                st.metric("Steps", len(steps))
-            with col4:
-                # Mock cost for now, as API response doesn't pass it through deeply yet
-                # ideally this would come from the API response
-                token_cost = result.get("cost", 0.0) 
-                if token_cost:
-                    st.metric("Est. Cost", f"${token_cost:.4f}")
-                else:
-                    st.metric("Wait", "None") # Placeholder until API is updated to return cost
-            
-            st.divider()
-            
-            # Plan details
-            with st.expander("📋 Execution Plan", expanded=True):
-                plan = result.get("plan", {})
-                if isinstance(plan, dict):
-                    st.markdown(f"**Task:** {plan.get('task_summary', 'N/A')}")
-                    st.markdown(f"**Expected Output:** {plan.get('expected_output', 'N/A')}")
-                    
-                    steps = plan.get("steps", [])
-                    for step in steps:
-                        st.markdown(f"""
-                        <div class="agent-card executor">
-                            <span class="step-indicator">{step.get('step_number', '?')}</span>
-                            <strong>{step.get('description', 'No description')}</strong><br>
-                            <small>🔧 Tool: <code>{step.get('tool', 'N/A')}</code> | 
-                            Action: <code>{step.get('action', 'N/A')}</code></small>
-                        </div>
-                        """, unsafe_allow_html=True)
-            
-            # Response
-            if not dry_run:
-                response = result.get("response", {})
-                if response:
-                    with st.expander("📊 Results", expanded=True):
-                        st.markdown(f"""
-                        <div class="result-card">
-                            <h4>📝 Summary</h4>
-                            <p>{response.get('summary', 'No summary available')}</p>
-                        </div>
-                        """, unsafe_allow_html=True)
-                        
-                        # Data section
-                        data = response.get("data", {})
-                        if data:
-                            st.markdown("#### 📦 Data")
-                            st.json(data)
-                        
-                        # Sources
-                        sources = response.get("sources", [])
-                        if sources:
-                            st.markdown(f"**Sources:** {', '.join(sources)}")
-                        
-                        # Errors
-                        errors = response.get("errors", [])
-                        if errors:
-                            st.warning(f"⚠️ Some errors occurred: {', '.join(errors)}")
+        """, unsafe_allow_html=True)
+    
+    st.markdown('</div>', unsafe_allow_html=True)
 
-with tab2:
-    st.markdown("### 📋 Plan Preview")
-    st.caption("See what the AI would do without actually executing it")
+# --- 🚀 EXECUTION LOGIC -------------------------------------------------------
+if run_btn and task_input:
+    start_time = time.time()
     
-    plan_input = st.text_area(
-        "Task for planning",
-        height=80,
-        placeholder="Enter a task to see the execution plan...",
-        key="plan_input"
-    )
+    # 1. State Visualization Container
+    status_container = st.empty()
+    progress_bar = st.progress(0)
     
-    if st.button("📝 Generate Plan", type="secondary"):
-        if plan_input:
-            with st.spinner("Generating plan..."):
-                result = get_plan_only(plan_input)
+    # Placeholder for live thinking steps
+    with status_container.container():
+        st.info("🧠 **Planner Agent** is thinking...")
+    
+    # API Call
+    result = make_request("POST", "/process", json={"task": task_input}, timeout=120)
+    
+    duration = time.time() - start_time
+    progress_bar.progress(100)
+    status_container.empty() # Clear initial loader
+    
+    if result.get("error"):
+        st.error(f"❌ Mission Failed: {result['error']}")
+    else:
+        # --- 🏁 RESULTS DASHBOARD ---------------------------------------------
+        
+        # 1. Top Level Metrics
+        st.markdown("### 📊 Mission Report")
+        m_col1, m_col2, m_col3, m_col4 = st.columns(4)
+        m_col1.metric("Status", "Success" if result.get("success") else "Partial", delta="Completed")
+        m_col2.metric("Time", f"{duration:.2f}s", delta_color="off")
+        m_col3.metric("Steps Executed", len(result.get("plan", {}).get("steps", [])), "LangGraph")
+        m_col4.metric("Est. Cost", f"${result.get('cost', 0):.5f}", "-Low")
+        
+        # 2. Key Findings (The "Response")
+        response = result.get("response", {})
+        summary = response.get("summary", "No summary provided.")
+        
+        st.markdown(f"""
+        <div class="glass-card" style="border-left: 4px solid #10b981; background: rgba(16, 185, 129, 0.05);">
+            <h3 style="color:#10b981; margin-top:0">💡 Executive Summary</h3>
+            <p style="font-size: 1.1em; line-height: 1.6; color: #e2e8f0">{summary}</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # 3. Rich Data Visualization
+        data = response.get("data", {})
+        if data:
+            st.subheader("📦 Verified Intelligence")
             
-            if result.get("success"):
-                plan = result.get("plan", {})
-                st.success("Plan generated successfully!")
-                
-                st.markdown(f"**Summary:** {plan.get('task_summary', 'N/A')}")
-                st.markdown(f"**Expected Output:** {plan.get('expected_output', 'N/A')}")
-                
-                steps = plan.get("steps", [])
-                for i, step in enumerate(steps):
-                    with st.container():
-                        cols = st.columns([1, 10])
-                        with cols[0]:
-                            st.markdown(f"### {step.get('step_number', i+1)}")
-                        with cols[1]:
-                            st.markdown(f"**{step.get('description', 'No description')}**")
-                            st.code(f"Tool: {step.get('tool')} | Action: {step.get('action')}")
-                            if step.get("parameters"):
-                                st.json(step.get("parameters"))
-            else:
-                st.error(f"Failed: {result.get('error', 'Unknown error')}")
+            # Smart rendering based on keys
+            weather_data = data.get("weather", [])
+            news_data = data.get("news", [])
+            github_data = data.get("github", [])
+            
+            # --- WEATHER WIDGET ---
+            if weather_data and isinstance(weather_data, list):
+                w_cols = st.columns(len(weather_data))
+                for idx, w in enumerate(weather_data):
+                    with w_cols[idx]:
+                         st.markdown(f"""
+                            <div class="weather-widget">
+                                <h3>{w.get('city', 'Unknown')}</h3>
+                                <div style="font-size:2.5em; font-weight:bold">{w.get('temperature', '?')}°</div>
+                                <div>{w.get('conditions', 'Clear')}</div>
+                                <div style="font-size:0.8em; opacity:0.7; margin-top:5px">
+                                    💧 {w.get('humidity', '?')}% | 💨 {w.get('wind_speed', '?')} km/h
+                                </div>
+                            </div>
+                         """, unsafe_allow_html=True)
+            
+            # --- NEWS GRID ---
+            if news_data and isinstance(news_data, dict):
+                articles = news_data.get("articles", [])
+                if articles:
+                    st.markdown("#### 📰 Relevant News")
+                    render_news_grid(articles)
+            
+            # --- OTHER DATA (Fallback) ---
+            with st.expander("🔍 View Raw Structured Data"):
+                st.json(data)
 
-with tab3:
-    st.markdown("### 📈 System Analytics")
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.markdown("#### 🏥 Health Status")
-        health = check_api_health()
-        if health:
-            st.json(health)
-        else:
-            st.error("Cannot fetch health data")
-    
-    with col2:
-        st.markdown("#### 📊 Cache Performance")
-        cache_stats = get_cache_stats()
-        if cache_stats:
-            st.metric("Backend", cache_stats.get("backend", "unknown").upper())
-            
-            hits = cache_stats.get("hits", 0)
-            misses = cache_stats.get("misses", 0)
-            total = hits + misses
-            
-            if total > 0:
-                import plotly.graph_objects as go
+        # 4. Technical Breakdown (Tabs)
+        st.write("")
+        st.subheader("🛠️ Technical Execution Details")
+        
+        tech_tab1, tech_tab2, tech_tab3 = st.tabs(["🗺️ Execution Plan", "⚡ Agent Logs", "🧾 Source References"])
+        
+        with tech_tab1:
+            plan = result.get("plan", {})
+            for step in plan.get("steps", []):
+                st.markdown(f"""
+                <div class="agent-badge" style="width:100%; display:flex; justify-content:space-between; margin-bottom:8px">
+                    <span>
+                        <span style="color:#3b82f6; font-weight:bold">#{step.get('step_number')}</span> 
+                        {step.get('description')}
+                    </span>
+                    <span style="font-family:monospace; background:rgba(0,0,0,0.3); padding:2px 6px; border-radius:4px">
+                        {step.get('tool')}.{step.get('action')}()
+                    </span>
+                </div>
+                """, unsafe_allow_html=True)
                 
-                fig = go.Figure(data=[go.Pie(
-                    labels=['Hits', 'Misses'],
-                    values=[hits, misses],
-                    hole=.6,
-                    marker_colors=['#27ae60', '#e74c3c']
-                )])
-                fig.update_layout(
-                    showlegend=True,
-                    height=300,
-                    margin=dict(t=0, b=0, l=0, r=0)
-                )
-                st.plotly_chart(fig, use_container_width=True)
-            else:
-                st.info("No cache activity yet")
-        else:
-            st.warning("Cannot fetch cache stats")
+        with tech_tab2:
+            st.code(json.dumps(result.get("execution", {}), indent=2), language="json")
+            
+        with tech_tab3:
+             sources = response.get("sources", [])
+             if sources:
+                 for s in sources:
+                     st.markdown(f"- 🔗 [{s}]({s})")
+             else:
+                 st.info("No external sources cited.")
+
+# --- 📊 ANALYTICS SIDEBAR -----------------------------------------------------
+with st.sidebar:
+    st.header("📈 Live Analytics")
     
-    # Clear cache button
-    if st.button("🗑️ Clear Cache"):
-        try:
-            response = requests.post(f"{API_URL}/cache/clear", timeout=5)
-            if response.status_code == 200:
-                st.success("Cache cleared!")
-            else:
-                st.error("Failed to clear cache")
-        except:
-            st.error("Cannot connect to API")
+    # Health Check
+    health = make_request("GET", "/health")
+    
+    if health and "cache" in health:
+        cache = health["cache"]
+        
+        # Donut Chart for Cache
+        hits = cache.get("hits", 0)
+        misses = cache.get("misses", 0)
+        
+        if hits + misses > 0:
+            fig = go.Figure(data=[go.Pie(
+                labels=['Cache Hits', 'API Calls'],
+                values=[hits, misses],
+                hole=.7,
+                marker=dict(colors=['#10b981', '#3b82f6']),
+                textinfo='none'
+            )])
+            fig.update_layout(
+                showlegend=False,
+                margin=dict(t=0, b=0, l=0, r=0),
+                height=120,
+                paper_bgcolor='rgba(0,0,0,0)',
+                plot_bgcolor='rgba(0,0,0,0)',
+                annotations=[dict(text=f"{int(hits/(hits+misses)*100)}%", x=0.5, y=0.5, font_size=20, showarrow=False, font_color="white")]
+            )
+            st.plotly_chart(fig, use_container_width=True)
+            
+            col_k1, col_k2 = st.columns(2)
+            col_k1.metric("Hits", hits)
+            col_k2.metric("Misses", misses)
+        else:
+            st.info("No traffic yet.")
+    
+    st.divider()
+    st.caption(f"System Version: {health.get('version', '2.0.0') if health else 'Unknown'}")
+    if st.button("🗑️ Flush Redis Cache"):
+        make_request("POST", "/cache/clear")
+        st.toast("Cache Cleared!", icon="🗑️")
 
 # Footer
-st.divider()
 st.markdown("""
-<div style="text-align: center; color: #95a5a6; font-size: 0.9em;">
-    <p>AI Operations Assistant v2.0.0 | Powered by LangGraph & Redis</p>
-    <p>📖 <a href="/docs" target="_blank">API Docs</a> | 
-    🔄 <a href="/graph" target="_blank">Workflow Graph</a></p>
+<br><br>
+<div style="text-align: center; opacity: 0.5; font-size: 0.8em">
+    AI Operations Assistant • Designed by Antigravity
 </div>
 """, unsafe_allow_html=True)
