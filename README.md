@@ -7,6 +7,11 @@
 ![Gemini](https://img.shields.io/badge/Google%20Gemini-Integrated-8E75B2?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 
+## Demo Images
+<img width="2532" height="1347" alt="image" src="https://github.com/user-attachments/assets/cb1e1297-a106-4a53-ab36-ea90711fe227" />
+<img width="2551" height="1357" alt="image" src="https://github.com/user-attachments/assets/dafdca62-c876-495d-b419-1d2d52e17659" />
+
+
 ## Project Overview
 
 The AI Operations Assistant is an enterprise-grade, multi-agent system designed to autonomously plan, execute, and verify complex operational tasks. Built on a microservices architecture, it leverages Large Language Models (LLMs) to orchestrate a suite of integrated tools, providing real-time intelligence and automation.
