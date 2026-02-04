@@ -130,6 +130,21 @@ The application opens in your browser at `http://localhost:8501`.
     ```
 *   **Module Not Found**: Ensure you have activated your virtual environment (`venv`) before running commands.
 
+### 6. Docker Support
+
+The application is containerized and available on the GitHub Container Registry.
+
+**Pull and Run:**
+```bash
+# Pull the latest image
+docker pull ghcr.io/praaatap/ai-operations-assistant:latest
+
+# Run the container (detached mode)
+docker run -d -p 8501:8501 --env-file .env ghcr.io/praaatap/ai-operations-assistant:latest
+```
+
+*Note: You need to pass your `.env` file containing the API keys to the container.*
+
 ## API Endpoints
 
 The system exposes a RESTful API for direct integration. You can explore the interactive API documentation (Swagger UI) at `http://localhost:8000/docs` when the server is running.
