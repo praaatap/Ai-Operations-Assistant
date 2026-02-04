@@ -41,6 +41,23 @@ services:
       start_period: 40s
     restart: unless-stopped
 
+  # Streamlit UI
+  streamlit-ui:
+    build: .
+    container_name: ai-ops-ui
+    ports:
+      - "8501:8501"
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: streamlit run streamlit_app.py --server.port 8501 --server.address 0.0.0.0
+    depends_on:
+      - ai-ops-assistant
+    restart: unless-stopped
+
 volumes:
   redis_data:
     driver: local
