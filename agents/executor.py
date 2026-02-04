@@ -1,0 +1,136 @@
+"""
+Executor Agent - Executes plan steps by calling tools
+"""
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from typing import Dict, List, Any
+
+from .base_agent import BaseAgent
+from models import ExecutionPlan, ExecutionResult, StepExecution, PlanStep
+from tools import GitHubTool, WeatherTool, NewsTool
+
+
+class ExecutorAgent(BaseAgent):
+    """
+    Executor Agent takes an execution plan and runs each step,
+    calling the appropriate tools and collecting results.
+    """
+    
+    def __init__(self, llm_client):
+        super().__init__(llm_client)
+        self.tools = {
+            "github": GitHubTool(),
+            "weather": WeatherTool(),
+            "news": NewsTool()
+        }
+    
+    @property
+    def name(self) -> str:
+        return "Executor"
+    
+    @property
+    def system_prompt(self) -> str:
+        return """You are an Executor Agent. Your role is to execute tool calls and collect results.
+You don't generate plans - you only execute steps given to you."""
+
+    async def process(self, plan: ExecutionPlan) -> ExecutionResult:
+        """
+        Execute all steps in the plan.
+        
+        Args:
+            plan: ExecutionPlan with steps to execute
+            
+        Returns:
+            ExecutionResult with all step outcomes
+        """
+        results: List[StepExecution] = []
+        step_results: Dict[int, Any] = {}  # Store results by step number
+        
+        for step in plan.steps:
+            execution = await self._execute_step(step, step_results)
+            results.append(execution)
+            
+            if execution.status == "success":
+                step_results[step.step_number] = execution.result
+        
+        # Calculate summary
+        successful = sum(1 for r in results if r.status == "success")
+        failed = sum(1 for r in results if r.status == "failed")
+        
+        return ExecutionResult(
+            success=failed == 0,
+            steps_executed=len(results),
+            steps_failed=failed,
+            results=results
+        )
+    
+    async def _execute_step(self, step: PlanStep, previous_results: Dict[int, Any]) -> StepExecution:
+        """Execute a single step"""
+        tool_name = step.tool.lower()
+        
+        # Check if tool exists
+        if tool_name not in self.tools:
+            return StepExecution(
+                step_number=step.step_number,
+                status="failed",
+                tool=step.tool,
+                action=step.action,
+                error=f"Unknown tool: {step.tool}"
+            )
+        
+        tool = self.tools[tool_name]
+        
+        try:
+            # Prepare parameters
+            params = self._prepare_parameters(step, previous_results)
+            params["action"] = step.action
+            
+            # Execute the tool
+            result = await tool.execute(**params)
+            
+            # Check for errors in result
+            if "error" in result:
+                return StepExecution(
+                    step_number=step.step_number,
+                    status="failed",
+                    tool=step.tool,
+                    action=step.action,
+                    error=result["error"]
+                )
+            
+            return StepExecution(
+                step_number=step.step_number,
+                status="success",
+                tool=step.tool,
+                action=step.action,
+                result=result
+            )
+            
+        except Exception as e:
+            return StepExecution(
+                step_number=step.step_number,
+                status="failed",
+                tool=step.tool,
+                action=step.action,
+                error=str(e)
+            )
+    
+    def _prepare_parameters(self, step: PlanStep, previous_results: Dict[int, Any]) -> Dict[str, Any]:
+        """Prepare parameters, resolving any dependencies"""
+        params = dict(step.parameters)
+        
+        # Here we could resolve references to previous step results
+        # For now, just return the parameters as-is
+        return params
+    
+    async def execute_single_step(self, step: PlanStep) -> StepExecution:
+        """Execute a single step (for retries)"""
+        return await self._execute_step(step, {})
+    
+    async def close(self):
+        """Clean up tool resources"""
+        for tool in self.tools.values():
+            if hasattr(tool, 'close'):
+                await tool.close()
