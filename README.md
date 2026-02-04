@@ -11,11 +11,9 @@
 
 The AI Operations Assistant is an enterprise-grade, multi-agent system designed to autonomously plan, execute, and verify complex operational tasks. Built on a microservices architecture, it leverages Large Language Models (LLMs) to orchestrate a suite of integrated tools, providing real-time intelligence and automation.
 
-This system demonstrates advanced agentic workflows, separating reasoning (Planner), action (Executor), and validation (Verifier) into distinct, coordinate components.
+This system demonstrates advanced agentic workflows, separating reasoning (Planner), action (Executor), and validation (Verifier) into distinct, connected components.
 
 ## Architecture
-
-The system follows a strict multi-agent orchestration pattern powered by LangGraph:
 
 ```mermaid
 graph TD
@@ -48,8 +46,84 @@ graph TD
 2.  **Tool Integration**: Seamlessly connects to 6 external APIs including GitHub, Open-Meteo, NewsAPI, and Wikipedia.
 3.  **Dual LLM Support**: Configurable to run on Google Gemini (default) or Groq (Llama 3) for high-performance inference.
 4.  **Resilient Architecture**: Includes automatic backend recovery, health monitoring, and graceful error handling.
-5.  **caching Layer**: Redis-based caching strategy to optimize API usage and reduce latency.
+5.  **Caching Layer**: Redis-based caching strategy to optimize API usage and reduce latency.
 6.  **Premium User Interface**: A data-centric dashboard built with Streamlit, featuring real-time workflow visualization and cost analytics.
+
+## Installation & Setup
+
+Follow these steps to set up the project locally.
+
+### 1. Prerequisites
+*   Python 3.10 or higher
+*   Git
+
+### 2. Clone the Repository
+```bash
+git clone https://github.com/praaatap/Ai-Operations-Assistant.git
+cd Ai-Operations-Assistant
+```
+
+### 3. Create a Virtual Environment (Recommended)
+It is highly recommended to use a virtual environment to manage dependencies.
+
+**Windows:**
+```powershell
+# Create the virtual environment
+python -m venv venv
+
+# Activate the virtual environment
+.\venv\Scripts\activate
+```
+
+**macOS / Linux:**
+```bash
+# Create the virtual environment
+python3 -m venv venv
+
+# Activate the virtual environment
+source venv/bin/activate
+```
+
+*Note: When activated, your terminal prompt should show `(venv)`.*
+
+### 4. Install Dependencies
+```bash
+pip install -r requirements.txt
+```
+
+### 5. Configuration
+Copy the example environment file and configure your API keys.
+
+```bash
+cp .env.example .env
+# On Windows use: copy .env.example .env
+```
+
+Open `.env` in a text editor and add your API keys:
+*   `GEMINI_API_KEY`: Required for Gemini LLM.
+*   `GROQ_API_KEY`: Required if using Groq.
+*   `NEWS_API_KEY`: Required for News tool.
+
+## Usage
+
+### Running the Application
+
+To launch both the backend API and the frontend dashboard (with auto-start enabled):
+
+```bash
+# Ensure your venv is activated
+streamlit run streamlit_app.py
+```
+
+The application opens in your browser at `http://localhost:8501`.
+
+### Troubleshooting
+
+*   **API Connection Error**: If you see connection errors, ensure `uvicorn` is installed and the backend started. The Streamlit app tries to auto-start it, but you can also run it manually:
+    ```bash
+    uvicorn main:app --reload --host 127.0.0.1 --port 8000
+    ```
+*   **Module Not Found**: Ensure you have activated your virtual environment (`venv`) before running commands.
 
 ## Technology Stack
 
@@ -59,70 +133,6 @@ graph TD
 *   **LLM Providers**: Google GenAI (Gemini), Groq
 *   **Caching**: Redis (with in-memory fallback)
 *   **Deployment**: Docker-ready, Streamlit Cloud compatible
-
-## Installation
-
-### Prerequisites
-
-*   Python 3.10 or higher
-*   Git
-
-### Setup Steps
-
-1.  **Clone the Repository**
-    ```bash
-    git clone https://github.com/praaatap/Ai-Operations-Assistant.git
-    cd Ai-Operations-Assistant
-    ```
-
-2.  **Create Virtual Environment**
-    ```bash
-    python -m venv venv
-    source venv/bin/activate  # On Windows: venv\Scripts\activate
-    ```
-
-3.  **Install Dependencies**
-    ```bash
-    pip install -r requirements.txt
-    ```
-
-4.  **Configuration**
-    Copy the example environment file and configure your API keys:
-    ```bash
-    cp .env.example .env
-    ```
-    Edit `.env` to include your `GEMINI_API_KEY` or `GROQ_API_KEY`.
-
-## Usage
-
-### Running the Application
-
-To launch both the backend API and the frontend dashboard:
-
-```bash
-streamlit run streamlit_app.py
-```
-
-The application will automatically start the backend server and open the web interface in your default browser at `http://localhost:8501`.
-
-### API Endpoints
-
-The system exposes a RESTful API for direct integration:
-
-*   `POST /process`: Submit a natural language task.
-*   `GET /health`: Check system status and agent availability.
-
-## Project Structure
-
-```text
-├── agents/             # Agent implementations (Planner, Executor, Verifier)
-├── llm/                # LLM client abstraction and cost tracking
-├── tools/              # Tool integrations (GitHub, Weather, etc.)
-├── utils/              # Helper utilities (Caching, Logging)
-├── main.py             # FastAPI backend entry point
-├── streamlit_app.py    # Streamlit frontend dashboard
-└── requirements.txt    # Project dependencies
-```
 
 ## Contact
 

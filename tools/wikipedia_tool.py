@@ -76,7 +76,10 @@ class WikipediaTool(BaseTool):
         if not query:
             return {"error": "Query parameter is required"}
         
-        limit = kwargs.get("limit", 5)
+        try:
+            limit = int(kwargs.get("limit", 5))
+        except (ValueError, TypeError):
+            limit = 5
         
         response = await self.client.get(
             self.SEARCH_URL,
