@@ -1,0 +1,519 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "AI Operations Assistant",
+    "description": "\n    # AI Operations Assistant API\n    \n    A multi-agent system capable of:\n    * **Planning**: Analyzing complex natural language requests\n    * **Execution**: Calling external APIs (GitHub, Weather, News)\n    * **Verification**: Ensuring results are correct and formatted\n    \n    ## usage\n    Post your natural language query to `/process`.\n    ",
+    "contact": {
+      "name": "GenAI Intern Candidate",
+      "email": "candidate@example.com"
+    },
+    "license": {
+      "name": "MIT"
+    },
+    "version": "1.0.1"
+  },
+  "paths": {
+    "/": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "summary": "Root",
+        "description": "Root endpoint with API information",
+        "operationId": "root__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "summary": "Health Check",
+        "description": "Health check endpoint",
+        "operationId": "health_check_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/process": {
+      "post": {
+        "tags": [
+          "Operations"
+        ],
+        "summary": "Process Task",
+        "description": "Process a natural language task through the multi-agent pipeline.\n\nFlow:\n1. **Planner Agent** creates an execution plan\n2. **Executor Agent** runs the plan steps\n3. **Verifier Agent** validates and formats the response",
+        "operationId": "process_task_process_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/plan": {
+      "post": {
+        "tags": [
+          "Operations"
+        ],
+        "summary": "Plan Only",
+        "description": "Get just the execution plan without running it (Dry Run)",
+        "operationId": "plan_only_plan_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ExecutionPlan": {
+        "properties": {
+          "task_summary": {
+            "type": "string",
+            "title": "Task Summary",
+            "description": "Summary of user's request"
+          },
+          "steps": {
+            "items": {
+              "$ref": "#/components/schemas/PlanStep"
+            },
+            "type": "array",
+            "title": "Steps",
+            "description": "Ordered list of steps to execute"
+          },
+          "expected_output": {
+            "type": "string",
+            "title": "Expected Output",
+            "description": "What the final output should contain"
+          }
+        },
+        "type": "object",
+        "required": [
+          "task_summary",
+          "steps",
+          "expected_output"
+        ],
+        "title": "ExecutionPlan",
+        "description": "Complete execution plan from Planner Agent",
+        "example": {
+          "expected_output": "Current weather conditions in London",
+          "steps": [
+            {
+              "action": "get",
+              "depends_on": [],
+              "description": "Fetch weather data for London",
+              "parameters": {
+                "city": "London"
+              },
+              "step_number": 1,
+              "tool": "weather"
+            }
+          ],
+          "task_summary": "Get weather for London"
+        }
+      },
+      "ExecutionResult": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "steps_executed": {
+            "type": "integer",
+            "title": "Steps Executed"
+          },
+          "steps_failed": {
+            "type": "integer",
+            "title": "Steps Failed"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/StepExecution"
+            },
+            "type": "array",
+            "title": "Results"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "steps_executed",
+          "steps_failed",
+          "results"
+        ],
+        "title": "ExecutionResult",
+        "description": "Complete result from Executor Agent"
+      },
+      "FinalResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary",
+            "description": "Human-readable summary of results"
+          },
+          "data": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Data",
+            "description": "Structured data results"
+          },
+          "sources": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Sources",
+            "description": "APIs/sources used"
+          },
+          "errors": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Errors",
+            "description": "Any errors encountered"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "summary"
+        ],
+        "title": "FinalResponse",
+        "description": "Final structured response to user",
+        "example": {
+          "data": {
+            "weather_get": {
+              "condition": "Clear sky",
+              "location": "London",
+              "temperature": 15
+            }
+          },
+          "errors": [],
+          "sources": [
+            "Weather API"
+          ],
+          "success": true,
+          "summary": "The current weather in London is 15\u00b0C with clear skies."
+        }
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "PlanStep": {
+        "properties": {
+          "step_number": {
+            "type": "integer",
+            "title": "Step Number",
+            "description": "Step number in sequence"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "description": "What this step does"
+          },
+          "tool": {
+            "type": "string",
+            "title": "Tool",
+            "description": "Tool to use: github, weather, or news"
+          },
+          "action": {
+            "type": "string",
+            "title": "Action",
+            "description": "Action to perform"
+          },
+          "parameters": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Parameters",
+            "description": "Parameters for the tool"
+          },
+          "depends_on": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Depends On",
+            "description": "Step numbers this depends on"
+          }
+        },
+        "type": "object",
+        "required": [
+          "step_number",
+          "description",
+          "tool",
+          "action"
+        ],
+        "title": "PlanStep",
+        "description": "A single step in the execution plan"
+      },
+      "StepExecution": {
+        "properties": {
+          "step_number": {
+            "type": "integer",
+            "title": "Step Number"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "'success', 'failed', or 'skipped'"
+          },
+          "tool": {
+            "type": "string",
+            "title": "Tool"
+          },
+          "action": {
+            "type": "string",
+            "title": "Action"
+          },
+          "result": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "step_number",
+          "status",
+          "tool",
+          "action"
+        ],
+        "title": "StepExecution",
+        "description": "Result of executing a single step"
+      },
+      "TaskRequest": {
+        "properties": {
+          "task": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Task",
+            "description": "Natural language task/query from user"
+          }
+        },
+        "type": "object",
+        "required": [
+          "task"
+        ],
+        "title": "TaskRequest",
+        "description": "API request model",
+        "example": {
+          "task": "What is the weather in Tokyo and finding trending AI repos on GitHub?"
+        }
+      },
+      "TaskResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "plan": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ExecutionPlan"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "execution": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ExecutionResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "response": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FinalResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success"
+        ],
+        "title": "TaskResponse",
+        "description": "API response model",
+        "example": {
+          "response": {
+            "data": {},
+            "errors": [],
+            "sources": [],
+            "success": true,
+            "summary": "I found the weather and repositories."
+          },
+          "success": true
+        }
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Operations",
+      "description": "Core operations for processing tasks"
+    },
+    {
+      "name": "System",
+      "description": "Health checks and system information"
+    }
+  ]
+}
