@@ -41,8 +41,16 @@ def launch_backend():
             stderr=subprocess.PIPE,
             cwd=os.path.dirname(os.path.abspath(__file__))
         )
-        # Give it a moment to startup
-        time.sleep(5)
+        # Wait for server to start
+        for i in range(10):
+            try:
+                requests.get("http://localhost:8000/health", timeout=1)
+                print("✅ API Server started successfully!")
+                return process
+            except requests.exceptions.ConnectionError:
+                time.sleep(2)
+        
+        print("❌ Failed to start API Server in time.")
         return process
 
 # Ensure backend is running
