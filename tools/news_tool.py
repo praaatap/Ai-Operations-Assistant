@@ -1,5 +1,5 @@
 """
-News Tool - Fetch news articles using NewsAPI
+News Tool - Fetch news articles using NewsAPI with caching
 """
 import os
 import httpx
@@ -8,11 +8,17 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 
 from .base_tool import BaseTool
 
+# Import cache utilities
+import sys
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from utils.cache import cached
+
 
 class NewsTool(BaseTool):
-    """Tool for fetching news using NewsAPI"""
+    """Tool for fetching news using NewsAPI with caching support"""
     
     BASE_URL = "https://newsapi.org/v2"
+    CACHE_TTL = int(os.getenv("CACHE_TTL_NEWS", 900))  # 15 minutes default
     
     def __init__(self):
         self.api_key = os.getenv("NEWS_API_KEY")
@@ -83,8 +89,9 @@ class NewsTool(BaseTool):
         except Exception as e:
             return {"error": str(e)}
     
+    @cached(prefix="news_headlines", ttl_seconds=900)
     async def _get_headlines(self, **kwargs) -> Dict[str, Any]:
-        """Get top headlines"""
+        """Get top headlines with caching"""
         params = {
             "apiKey": self.api_key,
             "country": kwargs.get("country", "us"),
@@ -104,10 +111,13 @@ class NewsTool(BaseTool):
             params=params
         )
         response.raise_for_status()
-        return self._format_response(response.json())
+        result = self._format_response(response.json())
+        result["cached"] = False
+        return result
     
+    @cached(prefix="news_search", ttl_seconds=900)
     async def _search_articles(self, **kwargs) -> Dict[str, Any]:
-        """Search news articles"""
+        """Search news articles with caching"""
         query = kwargs.get("query")
         if not query:
             return {"error": "Query parameter is required for search"}
@@ -123,7 +133,9 @@ class NewsTool(BaseTool):
             }
         )
         response.raise_for_status()
-        return self._format_response(response.json())
+        result = self._format_response(response.json())
+        result["cached"] = False
+        return result
     
     def _format_response(self, data: Dict) -> Dict[str, Any]:
         """Format API response"""

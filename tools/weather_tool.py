@@ -1,18 +1,25 @@
 """
-Weather Tool - Get current weather data using Open-Meteo API (free, no API key required)
+Weather Tool - Get current weather data using Open-Meteo API with caching
 """
+import os
 import httpx
 from typing import Any, Dict
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from .base_tool import BaseTool
 
+# Import cache utilities
+import sys
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from utils.cache import cached
+
 
 class WeatherTool(BaseTool):
-    """Tool for fetching weather data using Open-Meteo API"""
+    """Tool for fetching weather data using Open-Meteo API with caching"""
     
     GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/search"
     WEATHER_URL = "https://api.open-meteo.com/v1/forecast"
+    CACHE_TTL = int(os.getenv("CACHE_TTL_WEATHER", 300))  # 5 minutes default
     
     # Weather code descriptions
     WEATHER_CODES = {
@@ -70,8 +77,9 @@ class WeatherTool(BaseTool):
         }
     
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
+    @cached(prefix="weather", ttl_seconds=300)
     async def execute(self, **kwargs) -> Dict[str, Any]:
-        """Get weather for specified city"""
+        """Get weather for specified city with caching"""
         city = kwargs.get("city")
         if not city:
             return {"error": "City parameter is required"}
@@ -97,6 +105,8 @@ class WeatherTool(BaseTool):
                 "latitude": location["latitude"],
                 "longitude": location["longitude"]
             }
+            
+            weather["cached"] = False  # Will be True when retrieved from cache
             
             return weather
             

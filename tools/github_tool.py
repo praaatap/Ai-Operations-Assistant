@@ -1,17 +1,24 @@
 """
-GitHub Tool - Search repositories and fetch repository details
+GitHub Tool - Search repositories and fetch repository details with caching
 """
+import os
 import httpx
 from typing import Any, Dict, Optional
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from .base_tool import BaseTool
 
+# Import cache utilities
+import sys
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from utils.cache import cached
+
 
 class GitHubTool(BaseTool):
-    """Tool for interacting with GitHub API"""
+    """Tool for interacting with GitHub API with caching support"""
     
     BASE_URL = "https://api.github.com"
+    CACHE_TTL = int(os.getenv("CACHE_TTL_GITHUB", 600))  # 10 minutes default
     
     def __init__(self):
         self.client = httpx.AsyncClient(
@@ -83,8 +90,9 @@ class GitHubTool(BaseTool):
         except Exception as e:
             return {"error": str(e)}
     
+    @cached(prefix="github_search", ttl_seconds=600)
     async def _search_repos(self, **kwargs) -> Dict[str, Any]:
-        """Search GitHub repositories"""
+        """Search GitHub repositories with caching"""
         query = kwargs.get("query")
         if not query:
             return {"error": "Query parameter is required for search"}
@@ -119,11 +127,13 @@ class GitHubTool(BaseTool):
         return {
             "success": True,
             "total_count": data.get("total_count", 0),
-            "repositories": repos
+            "repositories": repos,
+            "cached": False  # Will be True when retrieved from cache
         }
     
+    @cached(prefix="github_repo", ttl_seconds=600)
     async def _get_repo(self, **kwargs) -> Dict[str, Any]:
-        """Get specific repository details"""
+        """Get specific repository details with caching"""
         owner = kwargs.get("owner")
         repo = kwargs.get("repo")
         
@@ -147,7 +157,8 @@ class GitHubTool(BaseTool):
                 "created_at": data["created_at"],
                 "updated_at": data["updated_at"],
                 "topics": data.get("topics", [])
-            }
+            },
+            "cached": False
         }
     
     async def close(self):
