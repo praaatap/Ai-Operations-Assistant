@@ -112,6 +112,15 @@ uvicorn main:app --reload
 
 Server starts at: `http://localhost:8000`
 
+### Running the Streamlit UI
+
+```bash
+# After starting the API server, run Streamlit in a new terminal
+streamlit run streamlit_app.py
+```
+
+Streamlit UI starts at: `http://localhost:8501`
+
 ## 📡 API Endpoints
 
 | Endpoint | Method | Description |
