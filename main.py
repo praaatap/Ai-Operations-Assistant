@@ -248,14 +248,19 @@ async def process_task(request: TaskRequest):
             
             # Step 1: Planning
             logger.info("Starting Phase 1: Planning")
-            plan = await planner.process(request.task)
+            try:
+                plan = await planner.process(request.task)
+                logger.info(f"Plan generated: {len(plan.steps)} steps")
+            except Exception as e:
+                logger.error(f"Planning failed with error: {e}")
+                raise HTTPException(status_code=500, detail=f"Planning Agent failed: {e}")
             
             if not plan.steps:
-                logger.warning("Planning failed to generate steps")
+                logger.warning("Planning completed but returned 0 steps. Raw plan: " + str(plan))
                 return TaskResponse(
                     success=False,
                     plan=plan,
-                    error="Could not create a valid execution plan for this task"
+                    error="Could not create a valid execution plan for this task. The LLM might have failed to understand the request."
                 )
             
             # Step 2: Execution

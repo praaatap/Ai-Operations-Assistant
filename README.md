@@ -27,14 +27,13 @@ A multi-agent AI system powered by **LangGraph** that accepts natural language t
 │  │  • Calls tools with appropriate parameters              │   │
 │  │  • Handles errors with retry logic                      │   │
 │  └─────────────────────────────────────────────────────────┘   │
-│               ┌──────────────┼──────────────┐                   │
-│               ▼              ▼              ▼                   │
-│         ┌──────────┐  ┌──────────┐  ┌──────────┐               │
-│         │  GitHub  │  │ Weather  │  │   News   │               │
-│         │   Tool   │  │   Tool   │  │   Tool   │               │
-│         └──────────┘  └──────────┘  └──────────┘               │
-│               │              │              │                   │
-│               └──────────────┼──────────────┘                   │
+│      ┌────────┬────────┬────────┬─────────┬────────┬────────┐   │
+│      ▼        ▼        ▼        ▼         ▼        ▼        │   │
+│   ┌──────┐ ┌──────┐ ┌──────┐ ┌───────┐ ┌──────┐ ┌──────┐   │   │
+│   │GitHub│ │Weather│ │ News │ │Wikipedia│ │Jokes │ │Quotes│   │   │
+│   │ Tool │ │ Tool │ │ Tool │ │  Tool  │ │ Tool │ │ Tool │   │   │
+│   └──────┘ └──────┘ └──────┘ └───────┘ └──────┘ └──────┘   │   │
+│      └────────┴────────┴────────┴─────────┴────────┴────────┘   │
 │                              ▼                                   │
 │  ┌─────────────────────────────────────────────────────────┐   │
 │  │                   VERIFIER AGENT                        │   │
@@ -64,11 +63,12 @@ A multi-agent AI system powered by **LangGraph** that accepts natural language t
 - **Premium UI Dashboard**: Glassmorphism design with real-time analytics and visualizations
 - **Multi-Agent Architecture**: Planner, Executor, and Verifier agents working together
 - **LangGraph Orchestration**: State machine-based workflow with automatic retry logic
+- **6 Integrated Tools**: GitHub, Weather, News, Wikipedia, Jokes, Quotes
 - **Parallel Execution**: Independent steps run concurrently for faster performance
 - **Cost Tracking**: Real-time token usage and cost estimation
 - **Redis Caching**: API response caching with configurable TTL
-- **Multiple LLM Support**: Gemini and OpenAI integration
-- **Real API Integration**: GitHub, Weather (Open-Meteo), and News APIs
+- **Multiple LLM Support**: Groq (Llama 3) and Gemini integration
+- **Real API Integration**: All tools connect to real, live APIs
 
 ## 🚀 Quick Start
 

@@ -1,0 +1,17 @@
+==================================================
+AI OPERATIONS ASSISTANT - DIAGNOSTIC TOOL
+==================================================
+
+[-] Checking Environment Configuration...
+  - GEMINI_API_KEY: [OK] Found
+  - OPENAI_API_KEY: [OK] Found
+  - GROQ_API_KEY: [OK] Found
+  - NEWS_API_KEY: [OK] Found
+  - LLM_PROVIDER: gemini
+
+[?] Testing LLM Connectivity...
+
+[ERROR] LLM Connection Failed: google-generativeai package not installed
+This is likely why the system is returning 'Partial' results.
+
+[FAILURE] SYSTEM ISSUES DETECTED. Please fix the errors above.

@@ -9,7 +9,7 @@ from typing import Dict, List, Any
 
 from .base_agent import BaseAgent
 from models import ExecutionPlan, ExecutionResult, StepExecution, PlanStep
-from tools import GitHubTool, WeatherTool, NewsTool
+from tools import GitHubTool, WeatherTool, NewsTool, WikipediaTool, JokesTool, QuotesTool
 
 
 class ExecutorAgent(BaseAgent):
@@ -23,7 +23,10 @@ class ExecutorAgent(BaseAgent):
         self.tools = {
             "github": GitHubTool(),
             "weather": WeatherTool(),
-            "news": NewsTool()
+            "news": NewsTool(),
+            "wikipedia": WikipediaTool(),
+            "jokes": JokesTool(),
+            "quotes": QuotesTool()
         }
     
     @property

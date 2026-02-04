@@ -109,7 +109,9 @@ class GitHubTool(BaseTool):
                 "per_page": limit
             }
         )
-        response.raise_for_status()
+        if response.status_code != 200:
+            return {"error": f"GitHub API Error: {response.status_code} - {response.text}"}
+        
         data = response.json()
         
         repos = []

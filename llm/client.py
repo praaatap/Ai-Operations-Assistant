@@ -1,35 +1,44 @@
 """
-LLM Client - Supports multiple LLM providers (Gemini and OpenAI)
+LLM Client - Supports Gemini and Groq LLM providers
 """
 import os
 import json
 from typing import Optional
 from tenacity import retry, stop_after_attempt, wait_exponential
 
+# Try the new google-genai SDK first, fallback to legacy
 try:
-    import google.generativeai as genai
+    from google import genai
+    from google.genai import types
     GEMINI_AVAILABLE = True
+    GEMINI_NEW_SDK = True
 except ImportError:
-    GEMINI_AVAILABLE = False
+    try:
+        import google.generativeai as genai
+        GEMINI_AVAILABLE = True
+        GEMINI_NEW_SDK = False
+    except ImportError:
+        GEMINI_AVAILABLE = False
+        GEMINI_NEW_SDK = False
 
 try:
-    from openai import OpenAI
-    OPENAI_AVAILABLE = True
+    from groq import Groq
+    GROQ_AVAILABLE = True
 except ImportError:
-    OPENAI_AVAILABLE = False
+    GROQ_AVAILABLE = False
 
 
 class LLMClient:
-    """Unified LLM client supporting Gemini and OpenAI"""
+    """Unified LLM client supporting Gemini and Groq"""
     
     def __init__(self, provider: Optional[str] = None):
         """
         Initialize LLM client with specified provider.
         
         Args:
-            provider: 'gemini' or 'openai'. If None, auto-detects based on available keys.
+            provider: 'gemini' or 'groq'. If None, auto-detects based on available keys.
         """
-        self.provider = provider or os.getenv("LLM_PROVIDER", "gemini")
+        self.provider = provider or os.getenv("LLM_PROVIDER", "groq")
         self._token_usage = {
             "prompt_tokens": 0,
             "completion_tokens": 0,
@@ -37,63 +46,73 @@ class LLMClient:
             "estimated_cost_usd": 0.0
         }
         self._setup_client()
-    
+
     def _setup_client(self):
         """Setup the appropriate LLM client based on provider"""
         if self.provider == "gemini":
             if not GEMINI_AVAILABLE:
-                raise ImportError("google-generativeai package not installed")
+                raise ImportError("google-genai or google-generativeai package not installed")
             api_key = os.getenv("GEMINI_API_KEY")
             if not api_key:
                 raise ValueError("GEMINI_API_KEY environment variable not set")
-            genai.configure(api_key=api_key)
-            self.model = genai.GenerativeModel('gemini-1.5-flash')
             
-        elif self.provider == "openai":
-            if not OPENAI_AVAILABLE:
-                raise ImportError("openai package not installed")
-            api_key = os.getenv("OPENAI_API_KEY")
+            if GEMINI_NEW_SDK:
+                # New SDK: google-genai
+                self.client = genai.Client(api_key=api_key)
+                self.model_name = "gemini-2.0-flash"
+            else:
+                # Legacy SDK: google-generativeai
+                genai.configure(api_key=api_key)
+                self.model = genai.GenerativeModel('gemini-1.5-flash')
+            
+        elif self.provider == "groq":
+            if not GROQ_AVAILABLE:
+                raise ImportError("groq package not installed")
+            api_key = os.getenv("GROQ_API_KEY")
             if not api_key:
-                raise ValueError("OPENAI_API_KEY environment variable not set")
-            self.client = OpenAI(api_key=api_key)
-            self.model_name = "gpt-3.5-turbo"
+                raise ValueError("GROQ_API_KEY environment variable not set")
+            self.client = Groq(api_key=api_key)
+            self.model_name = "llama-3.3-70b-versatile"
         else:
-            raise ValueError(f"Unknown LLM provider: {self.provider}")
-    
+            raise ValueError(f"Unknown LLM provider: {self.provider}. Supported: 'gemini', 'groq'")
+
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
     def generate(self, prompt: str, system_prompt: Optional[str] = None) -> str:
         """
         Generate text response from LLM.
-        
-        Args:
-            prompt: The user prompt
-            system_prompt: Optional system prompt for context
-            
-        Returns:
-            Generated text response
         """
         if self.provider == "gemini":
             return self._generate_gemini(prompt, system_prompt)
         else:
-            return self._generate_openai(prompt, system_prompt)
-    
+            return self._generate_groq(prompt, system_prompt)
+
     def _generate_gemini(self, prompt: str, system_prompt: Optional[str] = None) -> str:
         """Generate using Gemini"""
         full_prompt = prompt
         if system_prompt:
             full_prompt = f"{system_prompt}\n\n{prompt}"
         
-        response = self.model.generate_content(full_prompt)
+        if GEMINI_NEW_SDK:
+            # New SDK: google-genai
+            response = self.client.models.generate_content(
+                model=self.model_name,
+                contents=full_prompt
+            )
+            response_text = response.text
+        else:
+            # Legacy SDK: google-generativeai
+            response = self.model.generate_content(full_prompt)
+            response_text = response.text
         
         # Track usage
         prompt_tokens = self._estimate_tokens(full_prompt)
-        completion_tokens = self._estimate_tokens(response.text)
+        completion_tokens = self._estimate_tokens(response_text)
         self._track_usage(prompt_tokens, completion_tokens)
         
-        return response.text
-    
-    def _generate_openai(self, prompt: str, system_prompt: Optional[str] = None) -> str:
-        """Generate using OpenAI"""
+        return response_text
+
+    def _generate_groq(self, prompt: str, system_prompt: Optional[str] = None) -> str:
+        """Generate using Groq"""
         messages = []
         if system_prompt:
             messages.append({"role": "system", "content": system_prompt})
@@ -114,27 +133,20 @@ class LLMClient:
             self._track_usage(prompt_tokens, completion_tokens)
             
         return response.choices[0].message.content
-    
+
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
     def generate_json(self, prompt: str, system_prompt: Optional[str] = None) -> dict:
         """
         Generate JSON response from LLM.
-        
-        Args:
-            prompt: The user prompt
-            system_prompt: Optional system prompt for context
-            
-        Returns:
-            Parsed JSON response as dictionary
         """
         json_instruction = "\n\nIMPORTANT: Respond ONLY with valid JSON. No markdown, no code blocks, no explanations."
         
         if self.provider == "gemini":
             response = self._generate_gemini(prompt + json_instruction, system_prompt)
         else:
-            response = self._generate_openai(prompt + json_instruction, system_prompt)
+            response = self._generate_groq(prompt + json_instruction, system_prompt)
         
-        # Clean response - remove markdown code blocks if present
+        # Clean response
         response = response.strip()
         if response.startswith("```json"):
             response = response[7:]
@@ -158,15 +170,13 @@ class LLMClient:
         
         # Estimate cost (approximate rates)
         cost = 0.0
-        if self.provider == "openai":
-            # GPT-3.5 Turbo rates
-            cost = (prompt_tokens * 0.0005 / 1000) + (completion_tokens * 0.0015 / 1000)
-        elif self.provider == "gemini":
-            # Gemini Flash rates (free tier or low cost)
+        if self.provider == "gemini":
             cost = (prompt_tokens * 0.000125 / 1000) + (completion_tokens * 0.000375 / 1000)
+        elif self.provider == "groq":
+            cost = (prompt_tokens * 0.00059 / 1000) + (completion_tokens * 0.00079 / 1000)
             
         self._token_usage["estimated_cost_usd"] += cost
 
     def _estimate_tokens(self, text: str) -> int:
-        """Simple rule-of-thumb token estimation (4 chars ~= 1 token)"""
+        """Simple rule-of-thumb token estimation"""
         return len(text) // 4

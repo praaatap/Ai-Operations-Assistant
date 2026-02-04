@@ -42,6 +42,18 @@ AVAILABLE TOOLS:
    - Parameters for headlines: category (business/tech/sports/etc), country (us/gb/in), limit
    - Parameters for search: query (string), limit (int)
 
+4. wikipedia - Search Wikipedia and get article summaries
+   - Actions: "search" (find articles), "summary" (get article summary)
+   - Parameters: query (string), limit (int, for search only)
+
+5. jokes - Get random jokes for entertainment
+   - Actions: "random" (any joke), "programming" (coding jokes), "dad" (dad jokes), "pun" (puns)
+   - Parameters: count (int, default 1)
+
+6. quotes - Get inspirational and famous quotes
+   - Actions: "random" (random quotes), "today" (quote of the day), "search" (search quotes), "author" (by author)
+   - Parameters: query (string, for search/author), count (int)
+
 RULES:
 1. Break down complex tasks into sequential steps
 2. Each step should use exactly ONE tool
