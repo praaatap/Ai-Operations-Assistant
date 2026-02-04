@@ -18,9 +18,36 @@ import time
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import sys
+import subprocess
+import os
 from datetime import datetime
 
-# Page configuration
+# --- 🚀 AUTOMATIC BACKEND LAUNCHER -------------------------------------------
+@st.cache_resource
+def launch_backend():
+    """Checks if the backend is running, if not, launches it."""
+    try:
+        # Check if backend is already responding
+        requests.get("http://localhost:8000/health", timeout=1)
+        return True
+    except requests.exceptions.ConnectionError:
+        # Backend not running, start it
+        print("🚀 Starting API Server...")
+        # Use subprocess to start uvicorn
+        process = subprocess.Popen(
+            [sys.executable, "-m", "uvicorn", "main:app", "--host", "127.0.0.1", "--port", "8000"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            cwd=os.path.dirname(os.path.abspath(__file__))
+        )
+        # Give it a moment to startup
+        time.sleep(5)
+        return process
+
+# Ensure backend is running
+launch_backend()
+# -----------------------------------------------------------------------------
 st.set_page_config(
     page_title="AI Ops Assistant | Enterprise",
     page_icon="🤖",
