@@ -63,6 +63,8 @@ A multi-agent AI system powered by **LangGraph** that accepts natural language t
 
 - **Multi-Agent Architecture**: Planner, Executor, and Verifier agents working together
 - **LangGraph Orchestration**: State machine-based workflow with automatic retry logic
+- **Parallel Execution**: Independent steps run concurrently for faster performance
+- **Cost Tracking**: Real-time token usage and cost estimation
 - **Redis Caching**: API response caching with configurable TTL
 - **Multiple LLM Support**: Gemini and OpenAI integration
 - **Real API Integration**: GitHub, Weather (Open-Meteo), and News APIs
