@@ -1,248 +1,129 @@
 # AI Operations Assistant
 
-A multi-agent AI system powered by **LangGraph** that accepts natural language tasks, plans execution steps, calls external APIs, and returns structured results with **Redis caching** for improved performance.
+![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=for-the-badge&logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.109-009688?style=for-the-badge&logo=fastapi&logoColor=white)
+![Streamlit](https://img.shields.io/badge/Streamlit-1.30-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)
+![LangGraph](https://img.shields.io/badge/LangGraph-Multi--Agent-orange?style=for-the-badge)
+![Gemini](https://img.shields.io/badge/Google%20Gemini-Integrated-8E75B2?style=for-the-badge)
+![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 
-## 🏗️ Architecture
+## Project Overview
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                     User Request (Natural Language)             │
-└─────────────────────────────────────────────────────────────────┘
-                                 │
-                                 ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    LANGGRAPH WORKFLOW                            │
-├─────────────────────────────────────────────────────────────────┤
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │                    PLANNER AGENT                        │   │
-│  │  • Analyzes user intent using LLM                       │   │
-│  │  • Creates step-by-step execution plan                  │   │
-│  │  • Selects appropriate tools for each step              │   │
-│  └─────────────────────────────────────────────────────────┘   │
-│                              │                                   │
-│                              ▼                                   │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │                   EXECUTOR AGENT                        │   │
-│  │  • Iterates through plan steps                          │   │
-│  │  • Calls tools with appropriate parameters              │   │
-│  │  • Handles errors with retry logic                      │   │
-│  └─────────────────────────────────────────────────────────┘   │
-│      ┌────────┬────────┬────────┬─────────┬────────┬────────┐   │
-│      ▼        ▼        ▼        ▼         ▼        ▼        │   │
-│   ┌──────┐ ┌──────┐ ┌──────┐ ┌───────┐ ┌──────┐ ┌──────┐   │   │
-│   │GitHub│ │Weather│ │ News │ │Wikipedia│ │Jokes │ │Quotes│   │   │
-│   │ Tool │ │ Tool │ │ Tool │ │  Tool  │ │ Tool │ │ Tool │   │   │
-│   └──────┘ └──────┘ └──────┘ └───────┘ └──────┘ └──────┘   │   │
-│      └────────┴────────┴────────┴─────────┴────────┴────────┘   │
-│                              ▼                                   │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │                   VERIFIER AGENT                        │   │
-│  │  • Validates execution results                          │   │
-│  │  • Identifies missing or failed data                    │   │
-│  │  • Formats final structured response                    │   │
-│  └─────────────────────────────────────────────────────────┘   │
-│                              │                                   │
-│                   ┌──────────┴──────────┐                       │
-│                   ▼                     ▼                       │
-│              [Success]             [Retry?]──► Back to Executor │
-│                   │                                              │
-└───────────────────┼──────────────────────────────────────────────┘
-                    ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                     Structured Response (JSON)                   │
-└─────────────────────────────────────────────────────────────────┘
+The AI Operations Assistant is an enterprise-grade, multi-agent system designed to autonomously plan, execute, and verify complex operational tasks. Built on a microservices architecture, it leverages Large Language Models (LLMs) to orchestrate a suite of integrated tools, providing real-time intelligence and automation.
 
-                    ┌─────────────────┐
-                    │   Redis Cache   │
-                    │  (API Responses)│
-                    └─────────────────┘
+This system demonstrates advanced agentic workflows, separating reasoning (Planner), action (Executor), and validation (Verifier) into distinct, coordinate components.
+
+## Architecture
+
+The system follows a strict multi-agent orchestration pattern powered by LangGraph:
+
+```mermaid
+graph TD
+    User[User Request] --> Planner
+    Planner[Planner Agent] -->|Execution Plan| Executor
+    
+    subgraph Execution Loop
+        Executor[Executor Agent] -->|Tool Calls| Tools
+        Tools -->|Results| Executor
+    end
+    
+    Executor -->|Raw Results| Verifier
+    Verifier[Verifier Agent] -->|Validation| Response
+    
+    subgraph Integrated Tools
+        Tools --> GitHub[GitHub API]
+        Tools --> Weather[Weather API]
+        Tools --> News[News API]
+        Tools --> Wikipedia[Wikipedia API]
+        Tools --> Jokes[Jokes API]
+        Tools --> Quotes[Quotes API]
+    end
+    
+    Response[Structured JSON Response] --> UI[Streamlit Dashboard]
 ```
 
-## ✨ Features
+## Key Features
 
-- **Premium UI Dashboard**: Glassmorphism design with real-time analytics and visualizations
-- **Multi-Agent Architecture**: Planner, Executor, and Verifier agents working together
-- **LangGraph Orchestration**: State machine-based workflow with automatic retry logic
-- **6 Integrated Tools**: GitHub, Weather, News, Wikipedia, Jokes, Quotes
-- **Parallel Execution**: Independent steps run concurrently for faster performance
-- **Cost Tracking**: Real-time token usage and cost estimation
-- **Redis Caching**: API response caching with configurable TTL
-- **Multiple LLM Support**: Groq (Llama 3) and Gemini integration
-- **Real API Integration**: All tools connect to real, live APIs
+1.  **Multi-Agent Orchestration**: Implements a chain-of-thought workflow where agents specialize in planning, execution, and verification.
+2.  **Tool Integration**: Seamlessly connects to 6 external APIs including GitHub, Open-Meteo, NewsAPI, and Wikipedia.
+3.  **Dual LLM Support**: Configurable to run on Google Gemini (default) or Groq (Llama 3) for high-performance inference.
+4.  **Resilient Architecture**: Includes automatic backend recovery, health monitoring, and graceful error handling.
+5.  **caching Layer**: Redis-based caching strategy to optimize API usage and reduce latency.
+6.  **Premium User Interface**: A data-centric dashboard built with Streamlit, featuring real-time workflow visualization and cost analytics.
 
-## 🚀 Quick Start
+## Technology Stack
 
-### Option 1: Docker Compose (Recommended)
+*   **Backend**: FastAPI, Uvicorn
+*   **Frontend**: Streamlit
+*   **AI Orchestration**: LangChain, LangGraph
+*   **LLM Providers**: Google GenAI (Gemini), Groq
+*   **Caching**: Redis (with in-memory fallback)
+*   **Deployment**: Docker-ready, Streamlit Cloud compatible
+
+## Installation
+
+### Prerequisites
+
+*   Python 3.10 or higher
+*   Git
+
+### Setup Steps
+
+1.  **Clone the Repository**
+    ```bash
+    git clone https://github.com/praaatap/Ai-Operations-Assistant.git
+    cd Ai-Operations-Assistant
+    ```
+
+2.  **Create Virtual Environment**
+    ```bash
+    python -m venv venv
+    source venv/bin/activate  # On Windows: venv\Scripts\activate
+    ```
+
+3.  **Install Dependencies**
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+4.  **Configuration**
+    Copy the example environment file and configure your API keys:
+    ```bash
+    cp .env.example .env
+    ```
+    Edit `.env` to include your `GEMINI_API_KEY` or `GROQ_API_KEY`.
+
+## Usage
+
+### Running the Application
+
+To launch both the backend API and the frontend dashboard:
 
 ```bash
-# Clone the repository
-cd ai_ops_assistant
-
-# Copy environment file and add your API keys
-copy .env.example .env
-# Edit .env with your API keys
-
-# Start all services
-docker-compose up --build -d
-
-# View logs
-docker-compose logs -f
-
-# Stop services
-docker-compose down
-```
-
-### Option 2: Local Development
-
-```bash
-# Create virtual environment
-python -m venv venv
-venv\Scripts\activate  # Windows
-# or: source venv/bin/activate  # Linux/Mac
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Copy environment file and add your API keys
-copy .env.example .env
-
-# Start Redis (optional, falls back to in-memory cache)
-docker run -d -p 6379:6379 redis:7-alpine
-
-# Run the server
-uvicorn main:app --reload
-```
-
-Server starts at: `http://localhost:8000`
-
-### Running the Streamlit UI
-
-```bash
-# After starting the API server, run Streamlit in a new terminal
 streamlit run streamlit_app.py
 ```
 
-Streamlit UI starts at: `http://localhost:8501`
+The application will automatically start the backend server and open the web interface in your default browser at `http://localhost:8501`.
 
-## 📡 API Endpoints
+### API Endpoints
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/` | GET | API information and features |
-| `/health` | GET | Health check with cache stats |
-| `/process` | POST | Process a natural language task |
-| `/plan` | POST | Get execution plan only (dry run) |
-| `/graph` | GET | View LangGraph workflow diagram |
-| `/cache/stats` | GET | Cache hit/miss statistics |
-| `/cache/clear` | POST | Clear cached data |
+The system exposes a RESTful API for direct integration:
 
-## 🔧 Integrated APIs
+*   `POST /process`: Submit a natural language task.
+*   `GET /health`: Check system status and agent availability.
 
-| API | Purpose | Cache TTL |
-|-----|---------|-----------|
-| **GitHub API** | Search repos, get details | 10 minutes |
-| **Open-Meteo API** | Current weather data | 5 minutes |
-| **NewsAPI** | Headlines and articles | 15 minutes |
+## Project Structure
 
-## 🧪 Example Prompts
-
-### GitHub Search
-```bash
-curl -X POST http://localhost:8000/process \
-  -H "Content-Type: application/json" \
-  -d '{"task": "Find the top 5 most starred Python machine learning libraries on GitHub"}'
+```text
+├── agents/             # Agent implementations (Planner, Executor, Verifier)
+├── llm/                # LLM client abstraction and cost tracking
+├── tools/              # Tool integrations (GitHub, Weather, etc.)
+├── utils/              # Helper utilities (Caching, Logging)
+├── main.py             # FastAPI backend entry point
+├── streamlit_app.py    # Streamlit frontend dashboard
+└── requirements.txt    # Project dependencies
 ```
 
-### Weather Query
-```bash
-curl -X POST http://localhost:8000/process \
-  -H "Content-Type: application/json" \
-  -d '{"task": "What is the current weather in Tokyo, London, and New York?"}'
-```
+## Contact
 
-### News Search
-```bash
-curl -X POST http://localhost:8000/process \
-  -H "Content-Type: application/json" \
-  -d '{"task": "Get me the latest technology news headlines"}'
-```
-
-### Combined Query
-```bash
-curl -X POST http://localhost:8000/process \
-  -H "Content-Type: application/json" \
-  -d '{"task": "Find trending AI repositories on GitHub and get the latest AI news"}'
-```
-
-## 📁 Project Structure
-
-```
-ai_ops_assistant/
-├── agents/
-│   ├── __init__.py
-│   ├── base_agent.py           # Abstract base class
-│   ├── planner.py              # Planner Agent
-│   ├── executor.py             # Executor Agent
-│   ├── verifier.py             # Verifier Agent
-│   └── langgraph_workflow.py   # LangGraph orchestration
-├── tools/
-│   ├── __init__.py
-│   ├── base_tool.py            # Tool interface
-│   ├── github_tool.py          # GitHub API (cached)
-│   ├── weather_tool.py         # Weather API (cached)
-│   └── news_tool.py            # News API (cached)
-├── llm/
-│   ├── __init__.py
-│   └── client.py               # Multi-LLM client
-├── utils/
-│   ├── __init__.py
-│   ├── logging_config.py       # Logging setup
-│   └── cache.py                # Redis cache utility
-├── tests/
-│   └── test_api.py             # API tests
-├── main.py                     # FastAPI application
-├── models.py                   # Pydantic models
-├── docker-compose.yml          # Docker services
-├── Dockerfile                  # Container definition
-├── requirements.txt            # Dependencies
-├── .env.example                # Environment template
-└── README.md                   # Documentation
-```
-
-## 🔑 Environment Variables
-
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `GEMINI_API_KEY` | Yes* | - | Google Gemini API key |
-| `OPENAI_API_KEY` | Yes* | - | OpenAI API key |
-| `NEWS_API_KEY` | Yes | - | NewsAPI.org API key |
-| `LLM_PROVIDER` | No | gemini | `gemini` or `openai` |
-| `REDIS_URL` | No | redis://localhost:6379 | Redis connection URL |
-| `CACHE_TTL_WEATHER` | No | 300 | Weather cache TTL (seconds) |
-| `CACHE_TTL_NEWS` | No | 900 | News cache TTL (seconds) |
-| `CACHE_TTL_GITHUB` | No | 600 | GitHub cache TTL (seconds) |
-
-*At least one LLM API key is required
-
-## 🛠️ Development
-
-### View Workflow Graph
-Navigate to `http://localhost:8000/graph` to see the LangGraph workflow as a Mermaid diagram.
-
-### Cache Statistics
-```bash
-curl http://localhost:8000/cache/stats
-```
-
-### Running Tests
-```bash
-pytest tests/ -v
-```
-
-### OpenAPI Documentation
-- Interactive Docs: `http://localhost:8000/docs`
-- ReDoc: `http://localhost:8000/redoc`
-
-## 📝 License
-
-MIT License
+For inquiries regarding this project, please open an issue in the repository.
