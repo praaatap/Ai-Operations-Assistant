@@ -42,3 +42,5 @@ data/
 # IDE
 .vscode/
 .idea/
+
+*.log
