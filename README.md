@@ -104,10 +104,27 @@ cp .env.example .env
 # On Windows use: copy .env.example .env
 ```
 
-Open `.env` in a text editor and add your API keys:
-*   `GEMINI_API_KEY`: Required for Gemini LLM.
-*   `GROQ_API_KEY`: Required if using Groq.
-*   `NEWS_API_KEY`: Required for News tool.
+Open `.env` in a text editor and paste the following configuration:
+
+```ini
+# LLM API Keys (at least one required)
+GEMINI_API_KEY=your_gemini_api_key_here
+GROQ_API_KEY=your_groq_api_key_here
+
+# News API Key (required for news tool)
+NEWS_API_KEY=your_news_api_key_here
+
+# Optional: Set preferred LLM provider (gemini or groq)
+LLM_PROVIDER=groq
+
+# Redis Configuration (optional - falls back to in-memory cache)
+REDIS_URL=redis://localhost:6379
+
+# Cache TTL Settings (in seconds)
+CACHE_TTL_WEATHER=300
+CACHE_TTL_NEWS=900
+CACHE_TTL_GITHUB=600
+```
 
 ## Usage
 
