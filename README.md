@@ -128,8 +128,8 @@ GROQ_API_KEY=your_groq_api_key_here
 # News API Key (required for news tool)
 NEWS_API_KEY=your_news_api_key_here
 
-# Optional: Set preferred LLM provider (gemini or groq)
-LLM_PROVIDER=groq
+# Optional: Set preferred LLM provider gemini
+LLM_PROVIDER=gemini
 
 # Redis Configuration (optional - falls back to in-memory cache)
 REDIS_URL=redis://localhost:6379
