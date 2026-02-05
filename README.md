@@ -5,6 +5,7 @@
 ![Streamlit](https://img.shields.io/badge/Streamlit-1.30-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)
 ![LangGraph](https://img.shields.io/badge/LangGraph-Multi--Agent-orange?style=for-the-badge)
 ![Gemini](https://img.shields.io/badge/Google%20Gemini-Integrated-8E75B2?style=for-the-badge)
+![Docker Build](https://github.com/praaatap/Ai-Operations-Assistant/actions/workflows/docker-publish.yml/badge.svg)
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 
 ## Demo Images
@@ -53,6 +54,19 @@ graph TD
 4.  **Resilient Architecture**: Includes automatic backend recovery, health monitoring, and graceful error handling.
 5.  **Caching Layer**: Redis-based caching strategy to optimize API usage and reduce latency.
 6.  **Premium User Interface**: A data-centric dashboard built with Streamlit, featuring real-time workflow visualization and cost analytics.
+
+## Integrated APIs
+
+The system is equipped with a suite of tools that the agents can autonomously invoke:
+
+| Tool | Capabilities | Example Scenario |
+| :--- | :--- | :--- |
+| **GitHub API** | Search repos, list issues, get user details | *"Find the most popular Python repo for web scraping"* |
+| **Open-Meteo** | Real-time weather data & forecasts | *"What's the temperature in Tokyo right now?"* |
+| **News API** | Global news search, headlines by category | *"Get the latest headlines about AI technology"* |
+| **Wikipedia** | Page summaries, search | *"Who invented the transistor?"* |
+| **Jokes API** | Programming & general jokes | *"Tell me a joke about Python"* |
+| **Quotes API** | Inspirational & famous quotes | *"Give me a quote about leadership"* |
 
 ## Installation & Setup
 
@@ -153,6 +167,16 @@ uvicorn main:app --reload --host 127.0.0.1 --port 8000
 streamlit run streamlit_app.py
 ```
 
+## Example Prompts
+
+Here are 5 prompts to test the system:
+
+1.  *"Analyze the 'streamlit/streamlit' repository and list the top 3 open issues."*
+2.  *"What is the weather in London today and find the latest BBC news headlines?"*
+3.  *"Explain the theory of relativity and get a quote from Albert Einstein."*
+4.  *"Who is the creator of Linux? Cross-reference with Wikipedia."*
+5.  *"Tell me a random programming joke."*
+
 ## Docker Support
 
 The application is fully containerized and available on the GitHub Container Registry (GHCR).
@@ -185,6 +209,13 @@ The system exposes a RESTful API for direct integration. You can explore the int
 *   **LLM Providers**: Google GenAI (Gemini), Groq
 *   **Caching**: Redis (with in-memory fallback)
 *   **Deployment**: Docker-ready, Streamlit Cloud compatible
+
+## Known Limitations & Tradeoffs
+
+*   **Context Window**: The model has a limited context window; very long conversations may lose tracking.
+*   **API Rate Limits**: Public APIs (like GitHub) have rate limits. High usage may trigger timeouts.
+*   **Local Execution**: Code execution runs locally; ensure you review code before approving (if approval is enabled).
+*   **Single Tenant**: Designed for single-user local usage, not multi-tenant SaaS.
 
 ## Contact
 
