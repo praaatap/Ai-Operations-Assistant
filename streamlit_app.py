@@ -22,6 +22,12 @@ import sys
 import subprocess
 import os
 from datetime import datetime
+from dotenv import load_dotenv, set_key
+from pathlib import Path
+
+# Load existing environment variables
+env_path = Path(__file__).parent / ".env"
+load_dotenv(env_path)
 
 # --- 🚀 AUTOMATIC BACKEND LAUNCHER -------------------------------------------
 @st.cache_resource
@@ -76,23 +82,45 @@ st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
-    /* ROOT VARIABLES */
+    /* ROOT VARIABLES - STEAM-INSPIRED PREMIUM */
     :root {
-        --primary: #6366f1;
-        --primary-glow: rgba(99, 102, 241, 0.4);
-        --success: #10b981;
-        --warning: #f59e0b;
-        --danger: #ef4444;
-        --glass-bg: rgba(255, 255, 255, 0.03);
-        --glass-border: rgba(255, 255, 255, 0.08);
+        --primary: #00d2ff;
+        --primary-glow: rgba(0, 210, 255, 0.4);
+        --accent: #1a9fff;
+        --success: #4ade80;
+        --warning: #fbbf24;
+        --danger: #f87171;
+        --bg-dark: #0a0a0a;
+        --bg-card: #171a21;
+        --bg-hover: #1b2838;
+        --border-color: rgba(0, 210, 255, 0.12);
+        --text-primary: #ffffff;
+        --text-secondary: #8f98a0;
     }
 
-    /* BASE THEME */
+    /* BASE THEME - STEAM DARK */
     .stApp {
-        background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%);
+        background: #0a0a0a;
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        color: #ffffff;
     }
-    
+
+    /* PREMIUM SCROLLBAR */
+    ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+        background: #171a21;
+    }
+    ::-webkit-scrollbar-thumb {
+        background: #2a475e;
+        border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: #00d2ff;
+    }
+
     /* Hide default header */
     header[data-testid="stHeader"] {
         background: transparent;
@@ -100,56 +128,59 @@ st.markdown("""
 
     h1, h2, h3, h4 {
         font-family: 'Inter', sans-serif;
-        font-weight: 600;
-        letter-spacing: -0.5px;
+        font-weight: 700;
+        letter-spacing: -1px;
+        margin-bottom: 1rem;
     }
 
-    /* GLASSMORPHISM CARD */
+    /* GLASSMORPHISM CARD - STEAM STYLE */
     .glass-card {
-        background: var(--glass-bg);
+        background: linear-gradient(180deg, #1b2838 0%, #171a21 100%);
         backdrop-filter: blur(20px);
         -webkit-backdrop-filter: blur(20px);
-        border: 1px solid var(--glass-border);
-        border-radius: 24px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
         padding: 28px;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
         margin-bottom: 24px;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: all 0.3s ease;
     }
     
     .glass-card:hover {
-        border-color: rgba(99, 102, 241, 0.3);
-        box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(99, 102, 241, 0.1);
-        transform: translateY(-2px);
+        border-color: rgba(0, 210, 255, 0.3);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.8), 0 0 20px rgba(0, 210, 255, 0.08);
+        transform: translateY(-4px);
     }
 
-    /* HERO SECTION */
+    /* HERO SECTION - STEAM STYLE */
     .hero-title {
-        font-size: 3rem;
+        font-size: 3.2rem;
         font-weight: 700;
-        background: linear-gradient(135deg, #fff 0%, #a5b4fc 50%, #818cf8 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        margin-bottom: 8px;
-        line-height: 1.2;
+        color: #ffffff;
+        margin-bottom: 16px;
+        line-height: 1.1;
+        letter-spacing: -1px;
+        text-shadow: 0 0 40px rgba(0, 210, 255, 0.3);
     }
     
     .hero-subtitle {
-        color: #94a3b8;
-        font-size: 1.15rem;
+        color: #8f98a0;
+        font-size: 1.1rem;
         font-weight: 400;
+        max-width: 700px;
+        margin: 0 auto;
+        line-height: 1.6;
     }
     
     .pro-badge {
         display: inline-block;
-        background: linear-gradient(135deg, #6366f1, #8b5cf6);
-        padding: 4px 12px;
-        border-radius: 20px;
+        background: linear-gradient(135deg, #1a9fff 0%, #00d2ff 100%);
+        padding: 6px 14px;
+        border-radius: 4px;
         font-size: 0.7rem;
-        font-weight: 600;
+        font-weight: 700;
         color: white;
-        margin-left: 12px;
-        vertical-align: middle;
+        margin: 4px;
         text-transform: uppercase;
         letter-spacing: 1px;
     }
@@ -209,87 +240,90 @@ st.markdown("""
         font-size: 1.5rem;
     }
 
-    /* INPUT FIELD */
+    /* INPUT FIELD - STEAM STYLE */
     .stTextArea textarea {
-        background: rgba(15, 15, 26, 0.8) !important;
-        border: 2px solid rgba(99, 102, 241, 0.2) !important;
-        border-radius: 16px !important;
-        color: #e2e8f0 !important;
-        font-size: 1.1rem !important;
+        background: #171a21 !important;
+        border: 1px solid #2a475e !important;
+        border-radius: 6px !important;
+        color: #ffffff !important;
+        font-size: 1rem !important;
         padding: 16px !important;
-        transition: all 0.3s ease !important;
+        transition: all 0.2s ease !important;
         font-family: 'Inter', sans-serif !important;
     }
     
     .stTextArea textarea:focus {
-        border-color: #6366f1 !important;
-        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15), 0 0 30px rgba(99, 102, 241, 0.1) !important;
+        border-color: #00d2ff !important;
+        box-shadow: 0 0 0 2px rgba(0, 210, 255, 0.2), 0 0 20px rgba(0, 210, 255, 0.1) !important;
     }
     
     .stTextArea textarea::placeholder {
-        color: #64748b !important;
+        color: #8f98a0 !important;
     }
 
-    /* PRIMARY BUTTON */
+    /* PRIMARY BUTTON - STEAM STYLE */
     div.stButton > button[kind="primary"], div.stButton > button {
-        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        background: linear-gradient(90deg, #1a9fff 0%, #00d2ff 100%);
         color: white;
         border: none;
-        padding: 16px 32px;
-        border-radius: 14px;
+        padding: 12px 28px;
+        border-radius: 4px;
         font-weight: 600;
-        font-size: 1rem;
+        font-size: 0.95rem;
         letter-spacing: 0.5px;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: all 0.2s ease;
         text-transform: uppercase;
-        box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+        box-shadow: 0 2px 8px rgba(0, 210, 255, 0.3);
     }
 
     div.stButton > button:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 8px 25px rgba(99, 102, 241, 0.5);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 210, 255, 0.4);
+        filter: brightness(1.1);
     }
     
     div.stButton > button:active {
-        transform: translateY(-1px);
+        transform: translateY(0px);
     }
 
     /* SECONDARY BUTTON */
     .secondary-btn button {
         background: transparent !important;
-        border: 1px solid rgba(255, 255, 255, 0.2) !important;
-        color: #e2e8f0 !important;
+        border: 1px solid #2a475e !important;
+        color: #8f98a0 !important;
+    }
+    
+    .secondary-btn button:hover {
+        border-color: #00d2ff !important;
+        color: #ffffff !important;
     }
 
-    /* METRICS CARDS */
+    /* METRICS CARDS - STEAM STYLE */
     div[data-testid="stMetricValue"] {
-        font-size: 2.2rem !important;
+        font-size: 2rem !important;
         font-weight: 700 !important;
-        background: linear-gradient(135deg, #60a5fa, #a78bfa);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
+        color: #ffffff !important;
     }
     
     div[data-testid="stMetricLabel"] {
-        font-size: 0.85rem !important;
-        color: #94a3b8 !important;
+        font-size: 0.8rem !important;
+        color: #8f98a0 !important;
         text-transform: uppercase;
         letter-spacing: 1px;
     }
 
-    /* RESULT CARDS */
+    /* RESULT CARDS - STEAM STYLE */
     .result-card {
-        background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%);
-        border: 1px solid rgba(99, 102, 241, 0.2);
-        border-radius: 20px;
-        padding: 24px;
-        margin-bottom: 16px;
+        background: #1b2838;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 12px;
     }
     
     .success-card {
-        background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.02) 100%);
-        border: 1px solid rgba(16, 185, 129, 0.3);
-        border-left: 4px solid #10b981;
+        background: linear-gradient(135deg, #1b2838 0%, #1e3a2f 100%);
+        border-left: 3px solid #4ade80;
     }
 
     /* WEATHER WIDGET */
@@ -434,8 +468,8 @@ st.markdown("""
     }
     
     .stTabs [aria-selected="true"] {
-        background: rgba(99, 102, 241, 0.2) !important;
-        color: #a5b4fc !important;
+        background: rgba(0, 210, 255, 0.2) !important;
+        color: #00d2ff !important;
     }
 
     /* EXPANDER */
@@ -444,16 +478,16 @@ st.markdown("""
         border-radius: 12px !important;
     }
 
-    /* SIDEBAR */
+    /* SIDEBAR - STEAM STYLE */
     section[data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #0f0f1a 0%, #1a1a2e 100%);
+        background: linear-gradient(180deg, #171a21 0%, #0a0a0a 100%);
         border-right: 1px solid rgba(255, 255, 255, 0.05);
     }
     
     section[data-testid="stSidebar"] .stMarkdown h1,
     section[data-testid="stSidebar"] .stMarkdown h2,
     section[data-testid="stSidebar"] .stMarkdown h3 {
-        color: #e2e8f0;
+        color: #ffffff;
     }
 
     /* ANIMATIONS */
@@ -463,8 +497,8 @@ st.markdown("""
     }
     
     @keyframes glow {
-        0%, 100% { box-shadow: 0 0 5px rgba(99, 102, 241, 0.5); }
-        50% { box-shadow: 0 0 20px rgba(99, 102, 241, 0.8); }
+        0%, 100% { box-shadow: 0 0 5px rgba(0, 210, 255, 0.5); }
+        50% { box-shadow: 0 0 20px rgba(0, 210, 255, 0.8); }
     }
     
     .pulse {
@@ -539,21 +573,27 @@ def render_workflow_visualization(stage="idle"):
     st.markdown(f"""
     <div class="workflow-container">
         <div class="agent-node {s['planner']}">
-            <div class="agent-icon">🧠</div>
-            <div class="agent-name">Planner</div>
-            <div class="agent-status">{'✓ Complete' if s['planner'] == 'completed' else '⚡ Active' if s['planner'] == 'active' else 'Waiting'}</div>
+            <div style="background: rgba(99, 102, 241, 0.1); border-radius: 50%; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; border: 1px solid rgba(99, 102, 241, 0.2);">
+                <span style="font-size: 1.8rem;">🧠</span>
+            </div>
+            <div class="agent-name">PLANNER</div>
+            <div class="agent-status">{'✓' if s['planner'] == 'completed' else '⚡' if s['planner'] == 'active' else '○'}</div>
         </div>
-        <div class="workflow-arrow">→</div>
+        <div class="workflow-arrow">──</div>
         <div class="agent-node {s['executor']}">
-            <div class="agent-icon">⚙️</div>
-            <div class="agent-name">Executor</div>
-            <div class="agent-status">{'✓ Complete' if s['executor'] == 'completed' else '⚡ Active' if s['executor'] == 'active' else 'Waiting'}</div>
+            <div style="background: rgba(99, 102, 241, 0.1); border-radius: 50%; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; border: 1px solid rgba(99, 102, 241, 0.2);">
+                <span style="font-size: 1.8rem;">⚙️</span>
+            </div>
+            <div class="agent-name">EXECUTOR</div>
+            <div class="agent-status">{'✓' if s['executor'] == 'completed' else '⚡' if s['executor'] == 'active' else '○'}</div>
         </div>
-        <div class="workflow-arrow">→</div>
+        <div class="workflow-arrow">──</div>
         <div class="agent-node {s['verifier']}">
-            <div class="agent-icon">✅</div>
-            <div class="agent-name">Verifier</div>
-            <div class="agent-status">{'✓ Complete' if s['verifier'] == 'completed' else '⚡ Active' if s['verifier'] == 'active' else 'Waiting'}</div>
+            <div style="background: rgba(99, 102, 241, 0.1); border-radius: 50%; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; border: 1px solid rgba(99, 102, 241, 0.2);">
+                <span style="font-size: 1.8rem;">🛡️</span>
+            </div>
+            <div class="agent-name">VERIFIER</div>
+            <div class="agent-status">{'✓' if s['verifier'] == 'completed' else '⚡' if s['verifier'] == 'active' else '○'}</div>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -669,13 +709,17 @@ def render_quotes(data):
 
 # Hero Section
 st.markdown("""
-<div style="text-align: center; padding: 20px 0 40px;">
+<div style="text-align: center; padding: 40px 0 60px;">
     <div class="hero-title">
-        AI Operations Assistant
-        <span class="pro-badge">Enterprise</span>
+        CORTEX-X
     </div>
     <div class="hero-subtitle">
-        Multi-Agent Orchestration powered by LangGraph • Groq & Gemini LLMs • Real-time API Integration
+        Enterprise-grade multi-agent orchestration for autonomous operations. 
+        Powered by LangGraph, Groq, and Gemini.
+    </div>
+    <div style="margin-top: 24px;">
+        <span class="pro-badge">v2.5 Stable</span>
+        <span class="pro-badge" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);">Neural Engine</span>
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -883,68 +927,76 @@ if run_btn and task_input:
 
 # --- 📊 SIDEBAR - ANALYTICS & CONTROLS ----------------------------------------
 with st.sidebar:
-    st.markdown("## 📈 Analytics Dashboard")
+    st.markdown("""
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
+        <span style="font-size: 2.5rem;">🚀</span>
+        <div>
+            <div style="font-size: 1.2rem; font-weight: 800; color: #fff; letter-spacing: -0.5px;">CORTEX-X</div>
+            <div style="font-size: 0.75rem; color: #00d2ff; font-weight: 600; text-transform: uppercase;">Control Panel</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
     
     # API Health
     health = make_request("GET", "/health")
     
+    st.markdown("### 🔌 System Integrity")
     if health and not health.get("error"):
-        st.markdown("### 🟢 System Status")
-        st.success(f"**Version:** {health.get('version', '2.0.0')}")
-        
         agents = health.get("agents", {})
-        col1, col2, col3 = st.columns(3)
-        col1.metric("Planner", "✅" if agents.get("planner") else "❌")
-        col2.metric("Executor", "✅" if agents.get("executor") else "❌")
-        col3.metric("Verifier", "✅" if agents.get("verifier") else "❌")
+        
+        # Grid for health indicators
+        h_col1, h_col2 = st.columns(2)
+        with h_col1:
+            st.markdown(f"""
+            <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); padding: 12px; border-radius: 12px; text-align: center;">
+                <div style="font-size: 0.7rem; color: #10b981; font-weight: 700; margin-bottom: 4px;">SYSTEM</div>
+                <div style="font-size: 0.9rem; font-weight: 600;">v{health.get('version', '2.0')}</div>
+            </div>
+            """, unsafe_allow_html=True)
+        with h_col2:
+            status_color = "#10b981" if all(agents.values()) else "#f59e0b"
+            st.markdown(f"""
+            <div style="background: {status_color}20; border: 1px solid {status_color}40; padding: 12px; border-radius: 12px; text-align: center;">
+                <div style="font-size: 0.7rem; color: {status_color}; font-weight: 700; margin-bottom: 4px;">STATUS</div>
+                <div style="font-size: 0.9rem; font-weight: 600;">ONLINE</div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+        st.write("")
+        st.markdown("**Agent Modules:**")
+        a_col1, a_col2, a_col3 = st.columns(3)
+        a_col1.markdown(f"🧠 {'✅' if agents.get('planner') else '❌'}")
+        a_col2.markdown(f"⚙️ {'✅' if agents.get('executor') else '❌'}")
+        a_col3.markdown(f"🛡️ {'✅' if agents.get('verifier') else '❌'}")
     else:
-        st.error("⚠️ API Offline")
+        st.markdown("""
+        <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); padding: 16px; border-radius: 12px; color: #ef4444; font-weight: 600;">
+            ⚠️ API SERVER OFFLINE
+        </div>
+        """, unsafe_allow_html=True)
     
+    st.write("")
     st.markdown("---")
     
     # Session Stats
-    st.markdown("### 📊 Session Statistics")
-    st.metric("Total Queries", st.session_state.total_queries)
-    st.metric("Total Cost", f"${st.session_state.total_cost:.6f}")
+    st.markdown("### 📊 Live Analytics")
+    s_col1, s_col2 = st.columns(2)
+    with s_col1:
+        st.metric("Requests", st.session_state.total_queries)
+    with s_col2:
+        st.metric("Est. Cost", f"${st.session_state.total_cost:.4f}")
     
     # Cache Stats
     if health and "cache" in health:
         cache = health["cache"]
-        st.markdown("### 💾 Cache Performance")
-        
         hits = cache.get("hits", 0)
         misses = cache.get("misses", 0)
         total = hits + misses
         
         if total > 0:
             hit_rate = (hits / total) * 100
-            
-            fig = go.Figure(data=[go.Pie(
-                labels=['Hits', 'Misses'],
-                values=[hits, misses],
-                hole=0.7,
-                marker=dict(colors=['#10b981', '#6366f1']),
-                textinfo='none'
-            )])
-            fig.update_layout(
-                showlegend=False,
-                margin=dict(t=0, b=0, l=0, r=0),
-                height=150,
-                paper_bgcolor='rgba(0,0,0,0)',
-                plot_bgcolor='rgba(0,0,0,0)',
-                annotations=[dict(
-                    text=f"{hit_rate:.0f}%",
-                    x=0.5, y=0.5,
-                    font_size=24,
-                    showarrow=False,
-                    font_color="white"
-                )]
-            )
-            st.plotly_chart(fig, use_container_width=True)
-            
-            col1, col2 = st.columns(2)
-            col1.metric("Hits", hits)
-            col2.metric("Misses", misses)
+            st.markdown(f"**Cache Efficiency:** {hit_rate:.1f}%")
+            st.progress(hit_rate / 100)
         else:
             st.info("No cache activity yet")
         
@@ -964,6 +1016,41 @@ with st.sidebar:
             </div>
             """, unsafe_allow_html=True)
     
+    st.markdown("---")
+    
+    # ⚙️ SETTINGS & .ENV MANAGEMENT
+    with st.expander("⚙️ System Configuration", expanded=False):
+        st.markdown("### 🔑 API Keys")
+        gemini_key = st.text_input("Gemini API Key", value=os.getenv("GEMINI_API_KEY", ""), type="password")
+        groq_key = st.text_input("Groq API Key", value=os.getenv("GROQ_API_KEY", ""), type="password")
+        news_key = st.text_input("News API Key", value=os.getenv("NEWS_API_KEY", ""), type="password")
+        
+        st.markdown("### 🤖 Model Preference")
+        llm_provider = st.selectbox("Preferred LLM", ["gemini", "groq"], index=0 if os.getenv("LLM_PROVIDER") == "gemini" else 1)
+        
+        if st.button("💾 Save Config", use_container_width=True):
+            try:
+                # Update .env file
+                if not env_path.exists():
+                    env_path.touch()
+                
+                set_key(str(env_path), "GEMINI_API_KEY", gemini_key)
+                set_key(str(env_path), "GROQ_API_KEY", groq_key)
+                set_key(str(env_path), "NEWS_API_KEY", news_key)
+                set_key(str(env_path), "LLM_PROVIDER", llm_provider)
+                
+                # Update current environment
+                os.environ["GEMINI_API_KEY"] = gemini_key
+                os.environ["GROQ_API_KEY"] = groq_key
+                os.environ["NEWS_API_KEY"] = news_key
+                os.environ["LLM_PROVIDER"] = llm_provider
+                
+                st.toast("Configuration saved successfully!", icon="✅")
+                time.sleep(1)
+                st.rerun()
+            except Exception as e:
+                st.error(f"Error saving config: {e}")
+
     st.markdown("---")
     
     # Actions

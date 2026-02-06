@@ -1,36 +1,18 @@
 """
-LLM Client - Supports Gemini and Groq LLM providers
+LLM Client - Supports Gemini and Groq LLM providers using LangChain
 """
 import os
 import json
-from typing import Optional
+from typing import Optional, Dict, Any
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-# Try the new google-genai SDK first, fallback to legacy
-try:
-    from google import genai
-    from google.genai import types
-    GEMINI_AVAILABLE = True
-    GEMINI_NEW_SDK = True
-except ImportError:
-    try:
-        import google.generativeai as genai
-        GEMINI_AVAILABLE = True
-        GEMINI_NEW_SDK = False
-    except ImportError:
-        GEMINI_AVAILABLE = False
-        GEMINI_NEW_SDK = False
+# LangChain Imports
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_groq import ChatGroq
+from langchain_core.messages import HumanMessage, SystemMessage
 
-try:
-    from groq import Groq
-    GROQ_AVAILABLE = True
-except ImportError:
-    GROQ_AVAILABLE = False
-
-
-# Trigger reload
 class LLMClient:
-    """Unified LLM client supporting Gemini and Groq"""
+    """Unified LLM client supporting Gemini and Groq via LangChain"""
     
     def __init__(self, provider: Optional[str] = None):
         """
@@ -46,125 +28,107 @@ class LLMClient:
             "total_tokens": 0,
             "estimated_cost_usd": 0.0
         }
-        self._setup_client()
+        self.model = self._setup_client()
 
     def _setup_client(self):
-        """Setup the appropriate LLM client based on provider"""
+        """Setup the appropriate LangChain Chat Model"""
         if self.provider == "gemini":
-            if not GEMINI_AVAILABLE:
-                raise ImportError("google-genai or google-generativeai package not installed")
             api_key = os.getenv("GEMINI_API_KEY")
             if not api_key:
                 raise ValueError("GEMINI_API_KEY environment variable not set")
             
-            if GEMINI_NEW_SDK:
-                # New SDK: google-genai
-                self.client = genai.Client(api_key=api_key)
-                self.model_name = "gemini-2.5-flash"
-            else:
-                # Legacy SDK: google-generativeai
-                genai.configure(api_key=api_key)
-                self.model = genai.GenerativeModel('gemini-2.5-flash')
+            return ChatGoogleGenerativeAI(
+                model="gemini-2.5-flash", 
+                google_api_key=api_key,
+                temperature=0.7,
+                convert_system_message_to_human=True
+            )
             
         elif self.provider == "groq":
-            if not GROQ_AVAILABLE:
-                raise ImportError("groq package not installed")
             api_key = os.getenv("GROQ_API_KEY")
             if not api_key:
                 raise ValueError("GROQ_API_KEY environment variable not set")
-            self.client = Groq(api_key=api_key)
-            self.model_name = "llama-3.3-70b-versatile"
+            
+            return ChatGroq(
+                model_name="llama-3.3-70b-versatile",
+                groq_api_key=api_key,
+                temperature=0.7
+            )
         else:
             raise ValueError(f"Unknown LLM provider: {self.provider}. Supported: 'gemini', 'groq'")
 
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
     def generate(self, prompt: str, system_prompt: Optional[str] = None) -> str:
         """
-        Generate text response from LLM.
+        Generate text response from LLM using LangChain.
         """
-        if self.provider == "gemini":
-            return self._generate_gemini(prompt, system_prompt)
-        else:
-            return self._generate_groq(prompt, system_prompt)
-
-    def _generate_gemini(self, prompt: str, system_prompt: Optional[str] = None) -> str:
-        """Generate using Gemini"""
-        full_prompt = prompt
-        if system_prompt:
-            full_prompt = f"{system_prompt}\n\n{prompt}"
-        
-        if GEMINI_NEW_SDK:
-            # New SDK: google-genai
-            response = self.client.models.generate_content(
-                model=self.model_name,
-                contents=full_prompt
-            )
-            response_text = response.text
-        else:
-            # Legacy SDK: google-generativeai
-            response = self.model.generate_content(full_prompt)
-            response_text = response.text
-        
-        # Track usage
-        prompt_tokens = self._estimate_tokens(full_prompt)
-        completion_tokens = self._estimate_tokens(response_text)
-        self._track_usage(prompt_tokens, completion_tokens)
-        
-        return response_text
-
-    def _generate_groq(self, prompt: str, system_prompt: Optional[str] = None) -> str:
-        """Generate using Groq"""
         messages = []
         if system_prompt:
-            messages.append({"role": "system", "content": system_prompt})
-        messages.append({"role": "user", "content": prompt})
+            messages.append(SystemMessage(content=system_prompt))
+        messages.append(HumanMessage(content=prompt))
         
-        response = self.client.chat.completions.create(
-            model=self.model_name,
-            messages=messages,
-            temperature=0.7
-        )
-        
-        # Track usage
-        if hasattr(response, 'usage') and response.usage:
-            self._track_usage(response.usage.prompt_tokens, response.usage.completion_tokens)
-        else:
-            prompt_tokens = self._estimate_tokens(str(messages))
-            completion_tokens = self._estimate_tokens(response.choices[0].message.content)
-            self._track_usage(prompt_tokens, completion_tokens)
+        try:
+            response = self.model.invoke(messages)
+            content = response.content
             
-        return response.choices[0].message.content
+            # Track usage
+            self._track_usage_from_response(response)
+            
+            return content
+        except Exception as e:
+            # Simple fallback error handling
+            print(f"Error during generation: {e}")
+            raise
 
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
     def generate_json(self, prompt: str, system_prompt: Optional[str] = None) -> dict:
         """
-        Generate JSON response from LLM.
+        Generate JSON response from LLM using LangChain.
         """
         json_instruction = "\n\nIMPORTANT: Respond ONLY with valid JSON. No markdown, no code blocks, no explanations."
+        full_user_prompt = prompt + json_instruction
         
-        if self.provider == "gemini":
-            response = self._generate_gemini(prompt + json_instruction, system_prompt)
-        else:
-            response = self._generate_groq(prompt + json_instruction, system_prompt)
+        response_text = self.generate(full_user_prompt, system_prompt)
         
         # Clean response
-        response = response.strip()
-        if response.startswith("```json"):
-            response = response[7:]
-        if response.startswith("```"):
-            response = response[3:]
-        if response.endswith("```"):
-            response = response[:-3]
-        response = response.strip()
+        cleaned_response = self._clean_json_text(response_text)
         
-        return json.loads(response)
+        try:
+            return json.loads(cleaned_response)
+        except json.JSONDecodeError:
+            # Last ditch effort: try to find JSON blob
+            import re
+            match = re.search(r'\{.*\}', cleaned_response, re.DOTALL)
+            if match:
+                return json.loads(match.group(0))
+            raise
 
     def get_token_usage(self) -> dict:
         """Get accumulated token usage statistics"""
         return self._token_usage
 
-    def _track_usage(self, prompt_tokens: int, completion_tokens: int):
-        """Track token usage and estimated cost"""
+    def _track_usage_from_response(self, response: Any):
+        """Track token usage from LangChain response metadata"""
+        try:
+            usage = response.response_metadata.get("token_usage", {})
+            if not usage:
+                 usage = response.response_metadata.get("usage", {})
+
+            # Normalize keys (Gemini vs Groq/OpenAI formats differ)
+            p_tokens = usage.get("prompt_tokens") or usage.get("prompt_token_count", 0)
+            c_tokens = usage.get("completion_tokens") or usage.get("candidates_token_count", 0) or usage.get("completion_token_count", 0)
+            
+            if p_tokens or c_tokens:
+                self._update_usage_stats(p_tokens, c_tokens)
+            else:
+                # Fallback estimate
+                self._update_usage_stats(len(str(response.content))//4, len(str(response.content))//4)
+                
+        except Exception:
+            pass
+
+    def _update_usage_stats(self, prompt_tokens: int, completion_tokens: int):
+        """Update internal counters and cost estimate"""
         self._token_usage["prompt_tokens"] += prompt_tokens
         self._token_usage["completion_tokens"] += completion_tokens
         self._token_usage["total_tokens"] += prompt_tokens + completion_tokens
@@ -172,12 +136,21 @@ class LLMClient:
         # Estimate cost (approximate rates)
         cost = 0.0
         if self.provider == "gemini":
+            # Gemini Flash rates
             cost = (prompt_tokens * 0.000125 / 1000) + (completion_tokens * 0.000375 / 1000)
         elif self.provider == "groq":
+            # Llama 3 70B rates on Groq (approx)
             cost = (prompt_tokens * 0.00059 / 1000) + (completion_tokens * 0.00079 / 1000)
             
         self._token_usage["estimated_cost_usd"] += cost
 
-    def _estimate_tokens(self, text: str) -> int:
-        """Simple rule-of-thumb token estimation"""
-        return len(text) // 4
+    def _clean_json_text(self, text: str) -> str:
+        """Remove markdown code blocks and whitespace"""
+        text = text.strip()
+        if text.startswith("```json"):
+            text = text[7:]
+        if text.startswith("```"):
+            text = text[3:]
+        if text.endswith("```"):
+            text = text[:-3]
+        return text.strip()

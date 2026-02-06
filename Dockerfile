@@ -23,11 +23,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY . .
 
-# Expose the Streamlit port
+# Expose the port (Render will override this, but good for documentation)
 EXPOSE 8501
 
-# Healthcheck
-HEALTHCHECK CMD curl --fail http://localhost:8501/_stcore/health || exit 1
-
-# entrypoint: Run Streamlit (which auto-launches the API backend)
-CMD ["streamlit", "run", "streamlit_app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+# Entrypoint: Run Streamlit (which auto-launches the API backend)
+# Using sh -c to ensure the $PORT environment variable is expanded
+CMD ["sh", "-c", "streamlit run streamlit_app.py --server.port $PORT --server.address 0.0.0.0"]
